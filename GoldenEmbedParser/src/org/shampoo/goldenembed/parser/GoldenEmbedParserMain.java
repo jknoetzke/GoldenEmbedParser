@@ -31,6 +31,19 @@ public class GoldenEmbedParserMain
 	static final byte MESG_CAPABILITIES_ID = 0x54;
 	static final byte MESG_BROADCAST_DATA_ID = 0x4E;
 	static final byte MESG_TX_SYNC = (byte)0xA4;
+	static final byte MESG_CHANNEL_SEARCH_TIMEOUT_ID =0x44;
+	static final byte MESG_ASSIGN_CHANNEL_ID = 0x42;
+	static final byte MESG_CHANNEL_RADIO_FREQ_ID = 0x45;
+    static final byte MESG_CHANNEL_MESG_PERIOD_ID = 0x43;
+    static final byte MESG_OPEN_CHANNEL_ID = (byte)0x4B;
+    static final byte MESG_CHANNEL_ID_ID = (byte)0x51; 
+    static final byte MESG_NETWORK_KEY_ID  = 0x46;
+    
+    float totalTrans = 0;
+    float totalErrors = 0;
+    boolean errorFlag = false;
+	
+	
 
 	int debug = 0;
 
@@ -38,27 +51,15 @@ public class GoldenEmbedParserMain
 	 * @param args
 	 */
 
-	// [0x09]..[0x4e]..[0x00]..[0x50]..[0xa0]..[0x01]..[0x08]..[0xa5]..[0x7f]..[0xff]..[0x5c]..[0x63]
-	// a4 09 4e 00 50 a0 01 08 db a1 32 66 34
 	public static void main(String[] args) {
-		// TODO Auto-generated method stub
-
+		
+		//byte checksum =(byte)0xa4 ^ (byte)0x03 ^ (byte)0x40 ^ (byte)0x00 ^ (byte)0x42 ^ (byte)0x00;
+		//byte checksum =(byte)0xa4 ^ (byte)0x03 ^ (byte)0x40 ^ (byte)0x00 ^ (byte)0x51 ^ (byte)0x00;
+		
+		//System.out.println("Converting 0x"+ UnicodeFormatter.byteToHex(checksum));
+		
+		
 		new GoldenEmbedParserMain();
-
-		// [0x00]..[0x50]..[0xa0]..[0x01]..[0x08]..[0xe1]..[0x3f]..[0xdb]..[0x50]..[0x4f]
-		// byte someBytes[] = new byte[10];
-		/*
-		 * someBytes[0] = (byte)0x00; someBytes[1] = (byte)0x50; someBytes[2] =
-		 * (byte)0xA0; someBytes[3] = (byte)0x01; someBytes[4] = (byte)0x08;
-		 * someBytes[5] = (byte)0xE1; someBytes[6] = (byte)0x3F; someBytes[7] =
-		 * (byte)0xDB; someBytes[8] = (byte)0x50; someBytes[9] = (byte)0x4F;
-		 * 
-		 * for (int x=0; x < 9; x++) { Byte aByte = someBytes[x];
-		 * System.out.println("Converting 0x" +
-		 * UnicodeFormatter.byteToHex(aByte)); //System.out.println("o" + x +
-		 * "=" + aByte.intValue()); System.out.println("o" + x + "=" +
-		 * unsignedByteToInt(aByte)); }
-		 */
 	}
 
 	public static int unsignedByteToInt(byte b) {
@@ -67,7 +68,7 @@ public class GoldenEmbedParserMain
 
 	GoldenEmbedParserMain() {
 		// Load up the file
-		File file = new File("//Users//jknotzke//Dropbox//LOG06.txt");
+		File file = new File("//Users//jknotzke//Dropbox//LOG02.txt");
 		try {
 			ANTrxHandler(getBytesFromFile(file));
 		} catch (IOException e) {
@@ -76,25 +77,25 @@ public class GoldenEmbedParserMain
 		}
 	}
 
-	private int ANTrxMsg(byte[] rxIN, int i) 
+	private int ANTrxMsg(byte[] rxIN, int i, int size) 
 	{
+		//System.out.println("Converting 0x"+ UnicodeFormatter.byteToHex(rxIN[i]));
 			switch (rxIN[i]) 
 			{
 				case MESG_RESPONSE_EVENT_ID:
-					// System.out.println("ID: MESG_RESPONSE_EVENT_ID\n");
-					ANTResponseHandler(rxIN, i);
+					System.out.println("ID: MESG_RESPONSE_EVENT_ID\n");
+					i = ANTresponseHandler(rxIN, i, size);
 					break;
 				case MESG_CAPABILITIES_ID:
-					// System.out.println("ID: MESG_CAPABILITIES_ID\n");
-					ANTCfgCapabilties(rxIN, i); // rxBuf[3] .. skip sync, size, msg
+					System.out.println("ID: MESG_CAPABILITIES_ID\n");
+					i = ANTCfgCapabilties(i, size); // rxBuf[3] .. skip sync, size, msg
 					break;
 				case MESG_BROADCAST_DATA_ID:
-					// System.out.println("ID: MESG_BROADCAST_DATA_ID\n");
-					i = ANTparseHRM(rxIN, i);
+					System.out.println("ID: MESG_BROADCAST_DATA_ID\n");
+					i = ANTparseHRM(rxIN, i+3);
 					break;
 				default:
-					// System.out.println("ID: Unknown 0x" +
-					// UnicodeFormatter.byteToHex(rxIN[i]));
+					//System.out.println("ID: Unknown 0x" + UnicodeFormatter.byteToHex(rxIN[i]));
 			}
 			return i;
 	}
@@ -135,90 +136,147 @@ public class GoldenEmbedParserMain
 		return bytes;
 	}
 
-	private int ANTResponseHandler(byte[] msgData, int i) {
-		return 0;
-	}
-
-	private int ANTCfgCapabilties(byte[] msgData, int i) {
-		return 0;
-	}
-
 	private int ANTparseHRM(byte[] msgData, int i) {
 
 		byte aByte;
-		int end = i + 11;
+		int end = i + 8;
 		int hrCountFinder = 0;
 
 		for (; i < end; i++) {
 			aByte = msgData[i];
-			System.out.println("Converting 0x"
-					+ UnicodeFormatter.byteToHex(msgData[i]));
-			if (hrCountFinder == 9) {
+			//System.out.println("Converting 0x"+ UnicodeFormatter.byteToHex(msgData[i]));
+			if (hrCountFinder == 6) { //HR is the sixth byte
+	//			System.out.println("Converting 0x"+ UnicodeFormatter.byteToHex(msgData[i]));
 				int hr = unsignedByteToInt(aByte);
 				System.out.println("Heart Rate is: " + hr);
-				debug++;
 			}
-			// else
-			// System.out.println("o" + i + "=" + unsignedByteToInt(aByte));
+			 //else
+			 //    System.out.println("o" + i + "=" + unsignedByteToInt(aByte));
 			hrCountFinder++;
 		}
 
-		return i;
+		return --i; //For Loop will advance itself.
 	}
 
 	private void ANTrxHandler(byte[] rxBuf )
 	{
-
-		boolean inMsg = false;
 		int msgN = 0;
+		int i;
+		int size = 0;
+		boolean inMsg = true;
 		
-		
-		for (int i = 0; i < rxBuf.length; i++)
+		for (i = 0; i < rxBuf.length; i++)
 	    {
-	    	if ((rxBuf[i] == MESG_TX_SYNC) && (inMsg == false))
+			//System.out.println("0x"+ UnicodeFormatter.byteToHex(rxBuf[i]));
+			
+	    	if (rxBuf[i] == MESG_TX_SYNC && inMsg)
 	        {
+	    		    inMsg = false;
 	        		msgN = 0; // Always reset msg count if we get a sync
-	                inMsg = true;
 	                msgN++;
-	                System.out.println("RX: [sync]");
+	                errorFlag = false;
+	                totalTrans++;
+	                //System.out.println("RX: [sync]");
 	         }
 	         else if (msgN == 1)
 	         {
-	             msgN++;
-	         }
-	         else if (msgN == 2)
-	         {
-	        	 msgN++;
-	         }
-	         else if (msgN < rxBuf[1]+3) // sync, size, checksum x 1 byte
-	         {
-	        	 msgN++;
+	        	 Byte aByte = new Byte(rxBuf[i]);
+	             msgN++; //Size
+	             size = aByte.intValue();
 	         }
 	         else
 	         {
-	        	 inMsg = false;
-	             if (checkSum(rxBuf, msgN) == rxBuf[msgN]) // Check if chksum = msg chksum
+	        	 if(rxBuf.length < size+3+i-2)
+	        	 {
+	        		 System.out.println("\n\nTotal Errors: " + totalErrors);
+	        		 System.out.println("Total Messages " + totalTrans);
+	        		 System.out.println("%: " +totalErrors / totalTrans * 100.0);
+	        		 System.exit(0); //EOF
+	        	 }
+	        	 byte checksum = checkSum(rxBuf, size, i-2);
+	             if (checksum == rxBuf[size+i+1]) // Check if chksum = msg chksum
 	             {
+	            	 inMsg = true;
 	            	 // Handle Message
-	                 ANTrxMsg(rxBuf, i);
+	                 i = ANTrxMsg(rxBuf, i, size);
 	             }
 	             else
 	             {
-	            	 System.out.println("RX: chksum mismatch");
-                 }
-              }
+		        	 //System.out.println("CheckSum Mismatch 0x"+ UnicodeFormatter.byteToHex(rxBuf[size+i+1]) + "!=: 0x" + UnicodeFormatter.byteToHex(checksum));
+	                 msgN = 0;
+	                 inMsg = true; 
+	                 if(errorFlag == false)
+	                 {
+	                	 totalErrors++;
+	                	 errorFlag = true;
+	                 }
+	             } 
+	         }
           }
+		 System.out.println("\n\nTotal Errors: " + totalErrors);
+		 System.out.println("Total Messages " + totalTrans);
+		 System.out.println("%: " + (totalErrors / totalTrans) * 100.0);
+
     }
 	
-	private byte checkSum(byte data[], int length)
+	private byte checkSum(byte data[], int length, int pos)
 	{
-	        int i;
-	        byte chksum = data[0];
 
-	        for (i = 1; i < length; i++)
+	        byte chksum = 0x0;
+
+	        for (int i = pos; i < length+3+pos; i++)
+	        {  
+	        	    //System.out.println("Checksum: 0x"+ UnicodeFormatter.byteToHex(data[i]));
 	                chksum ^= data[i];  // +1 since skip prefix sync code, we already counted it
-
+	        }
+	        
 	        return chksum;
 	}
+	
+	private int ANTresponseHandler(byte rxBuf[], int pos, int size)
+	{
+		    pos++;
+	        byte ch = rxBuf[0+pos];
+	        byte id = rxBuf[1+pos];
+	        byte code = rxBuf[2+pos];
 
+	        System.out.println("Channel Num:" + UnicodeFormatter.byteToHex(ch));
+	        System.out.println("Message ID: " + UnicodeFormatter.byteToHex(id));
+	        System.out.println("Code: " + UnicodeFormatter.byteToHex(code));
+
+	        switch (id)
+	        {
+	                case MESG_CHANNEL_SEARCH_TIMEOUT_ID:
+	                        System.out.println("[MESG_CHANNEL_SEARCH_TIMEOUT_ID]\n");
+	                        break;
+	                case MESG_ASSIGN_CHANNEL_ID :
+	                        System.out.println("[MESG_ASSIGN_CHANNEL_ID]\n");
+	                        break;
+	                case MESG_CHANNEL_RADIO_FREQ_ID :
+	                        System.out.println("[MESG_CHANNEL_RADIO_FREQ_ID]\n");
+	                        break;
+	                case MESG_CHANNEL_MESG_PERIOD_ID :
+	                        System.out.println("[MESG_CHANNEL_MESG_PERIOD_ID]\n");
+	                        break;
+	                case MESG_OPEN_CHANNEL_ID :
+	                        System.out.println("[MESG_OPEN_CHANNEL_ID]\n");
+	                        break;
+	                case MESG_CHANNEL_ID_ID :
+	                        System.out.println("[MESG_CHANNEL_ID_ID]\n");
+	                        break;
+	                case MESG_NETWORK_KEY_ID :
+	                        System.out.println("[MESG_NETWORK_KEY_ID]\n");
+	                        break;
+	                default :
+	                        System.out.println("[unknown]\n");
+	                        break;
+	        }
+
+	        return pos+3; //Read 3 bytes for loop will increment by 1. Move it forward 2
+	}
+	
+	private int ANTCfgCapabilties(int i, int size)
+	{
+		return i+size+1;
+	}	
 }
