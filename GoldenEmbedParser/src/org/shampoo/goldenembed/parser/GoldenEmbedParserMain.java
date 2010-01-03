@@ -68,7 +68,7 @@ public class GoldenEmbedParserMain
 
 	GoldenEmbedParserMain() {
 		// Load up the file
-		File file = new File("//Users//jknotzke//Dropbox//LOG02.txt");
+		File file = new File("/Volumes//DATALOGGER//LOG07.txt");
 		try {
 			ANTrxHandler(getBytesFromFile(file));
 		} catch (IOException e) {
