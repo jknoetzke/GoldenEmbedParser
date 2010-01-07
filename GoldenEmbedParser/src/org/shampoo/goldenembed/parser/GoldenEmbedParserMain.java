@@ -59,16 +59,24 @@ public class GoldenEmbedParserMain
 		//System.out.println("Converting 0x"+ UnicodeFormatter.byteToHex(checksum));
 		
 		
-		new GoldenEmbedParserMain();
+		new GoldenEmbedParserMain(args);
 	}
 
 	public static int unsignedByteToInt(byte b) {
 		return (int) b & 0xFF;
 	}
 
-	GoldenEmbedParserMain() {
+	GoldenEmbedParserMain(String[] args) {
 		// Load up the file
-		File file = new File("/Volumes//DATALOGGER//LOG07.txt");
+		File file;
+		
+		if(args.length  != 1)
+			file = new File("/Volumes//DATALOGGER//LOG07.txt");
+		else
+			file = new File(args[0]);
+		
+		System.out.println("\n"+file.getAbsolutePath()+"\n");
+		
 		try {
 			ANTrxHandler(getBytesFromFile(file));
 		} catch (IOException e) {
