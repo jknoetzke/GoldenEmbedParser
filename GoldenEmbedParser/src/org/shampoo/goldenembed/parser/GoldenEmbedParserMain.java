@@ -163,6 +163,18 @@ public class GoldenEmbedParserMain
 			hrCountFinder++;
 		}
 
+		Byte hr;
+	    Byte min;
+	    Byte sec;
+		
+        //Print out the time stamp
+        hr = new Byte(msgData[i++]);
+        min = new Byte(msgData[i++]);
+        sec = new Byte(msgData[i++]);
+        
+        System.out.println("Time stamp: "  + hr.intValue() +":"+min.intValue()+":"+sec.intValue());
+		
+
 		return --i; //For Loop will advance itself.
 	}
 
@@ -243,6 +255,10 @@ public class GoldenEmbedParserMain
 	
 	private int ANTresponseHandler(byte rxBuf[], int pos, int size)
 	{
+		    Byte hr;
+		    Byte min;
+		    Byte sec;
+		    
 		    pos++;
 	        byte ch = rxBuf[0+pos];
 	        byte id = rxBuf[1+pos];
@@ -280,11 +296,19 @@ public class GoldenEmbedParserMain
 	                        break;
 	        }
 
-	        return pos+3; //Read 3 bytes for loop will increment by 1. Move it forward 2
+	        //Print out the time stamp
+	        hr = new Byte(rxBuf[4+pos]);
+	        min = new Byte(rxBuf[5+pos]);
+	        sec = new Byte(rxBuf[6+pos]);
+	        
+	        System.out.println("Time stamp: "  + hr.intValue() +":"+min.intValue()+":"+sec.intValue());
+	        
+	        
+	        return pos+6; //Read 3 bytes for loop will increment by 1. Move it forward 6 HR:MIN:SEC
 	}
 	
 	private int ANTCfgCapabilties(int i, int size)
 	{
-		return i+size+1;
+		return i+size+4;
 	}	
 }
