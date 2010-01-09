@@ -51,13 +51,8 @@ public class GoldenEmbedParserMain
 	 * @param args
 	 */
 
-	public static void main(String[] args) {
-		
-		//byte checksum =(byte)0xa4 ^ (byte)0x03 ^ (byte)0x40 ^ (byte)0x00 ^ (byte)0x42 ^ (byte)0x00;
-		//byte checksum =(byte)0xa4 ^ (byte)0x03 ^ (byte)0x40 ^ (byte)0x00 ^ (byte)0x51 ^ (byte)0x00;
-		
-		//System.out.println("Converting 0x"+ UnicodeFormatter.byteToHex(checksum));
-		
+	public static void main(String[] args) 
+	{
 		
 		new GoldenEmbedParserMain(args);
 	}
@@ -87,7 +82,7 @@ public class GoldenEmbedParserMain
 
 	private int ANTrxMsg(byte[] rxIN, int i, int size) 
 	{
-		//System.out.println("Converting 0x"+ UnicodeFormatter.byteToHex(rxIN[i]));
+		    //System.out.println("Converting 0x"+ UnicodeFormatter.byteToHex(rxIN[i]));
 			switch (rxIN[i]) 
 			{
 				case MESG_RESPONSE_EVENT_ID:
@@ -102,12 +97,61 @@ public class GoldenEmbedParserMain
 					System.out.println("ID: MESG_BROADCAST_DATA_ID\n");
 					i = ANTparseHRM(rxIN, i+3);
 					break;
+				case MESG_CHANNEL_ID_ID:
+					System.out.println("ID: MESG_CHANNEL_ID_ID\n");
+					i = ANTChannelID(rxIN, ++i);
+					break;
+					
+					
 				default:
 					//System.out.println("ID: Unknown 0x" + UnicodeFormatter.byteToHex(rxIN[i]));
 			}
 			return i;
 	}
 
+	public int ANTChannelID(byte[] msgIN, int pos)
+	{
+		byte[] devNo = new byte[2];
+		
+		//System.out.println("0x" + UnicodeFormatter.byteToHex(msgIN[pos]));
+
+		pos +=2;
+		devNo[0] = msgIN[pos];
+		//System.out.println("0x" + UnicodeFormatter.byteToHex(msgIN[pos]));
+
+		pos--;
+		//System.out.println("0x" + UnicodeFormatter.byteToHex(msgIN[pos]));
+		devNo[1] = msgIN[pos];
+		
+		int deviceNum = byteArrayToInt(devNo, 0, 2);
+		System.out.println("Device Number is: " + deviceNum);
+
+		pos += 2;
+		System.out.println("Device Type is: 0x" + UnicodeFormatter.byteToHex(msgIN[pos]));
+		System.out.println("Man ID is: 0x" + UnicodeFormatter.byteToHex(msgIN[++pos])+"\n");
+
+		pos = printTimeStamp(msgIN, ++pos);
+		
+		return pos; 
+	}
+	
+	
+	public int printTimeStamp(byte[] msgData, int i)
+	{
+		Byte hr;
+	    Byte min;
+	    Byte sec;
+		
+        //Print out the time stamp
+        hr = new Byte(msgData[i++]);
+        min = new Byte(msgData[i++]);
+        sec = new Byte(msgData[i++]);
+        
+        System.out.println("Time stamp: "  + hr.intValue() +":"+min.intValue()+":"+sec.intValue());
+
+        return i;
+	}
+	
 	public byte[] getBytesFromFile(File file) throws IOException {
 		InputStream is = new FileInputStream(file);
 
@@ -163,6 +207,7 @@ public class GoldenEmbedParserMain
 			hrCountFinder++;
 		}
 
+	/*
 		Byte hr;
 	    Byte min;
 	    Byte sec;
@@ -173,8 +218,10 @@ public class GoldenEmbedParserMain
         sec = new Byte(msgData[i++]);
         
         System.out.println("Time stamp: "  + hr.intValue() +":"+min.intValue()+":"+sec.intValue());
-		
+		*/
 
+		i = printTimeStamp(msgData, i);
+		
 		return --i; //For Loop will advance itself.
 	}
 
@@ -271,44 +318,56 @@ public class GoldenEmbedParserMain
 	        switch (id)
 	        {
 	                case MESG_CHANNEL_SEARCH_TIMEOUT_ID:
-	                        System.out.println("[MESG_CHANNEL_SEARCH_TIMEOUT_ID]\n");
+	                        System.out.println("[MESG_CHANNEL_SEARCH_TIMEOUT_ID]");
 	                        break;
 	                case MESG_ASSIGN_CHANNEL_ID :
-	                        System.out.println("[MESG_ASSIGN_CHANNEL_ID]\n");
+	                        System.out.println("[MESG_ASSIGN_CHANNEL_ID]");
 	                        break;
 	                case MESG_CHANNEL_RADIO_FREQ_ID :
-	                        System.out.println("[MESG_CHANNEL_RADIO_FREQ_ID]\n");
+	                        System.out.println("[MESG_CHANNEL_RADIO_FREQ_ID]");
 	                        break;
 	                case MESG_CHANNEL_MESG_PERIOD_ID :
-	                        System.out.println("[MESG_CHANNEL_MESG_PERIOD_ID]\n");
+	                        System.out.println("[MESG_CHANNEL_MESG_PERIOD_ID]");
 	                        break;
 	                case MESG_OPEN_CHANNEL_ID :
-	                        System.out.println("[MESG_OPEN_CHANNEL_ID]\n");
+	                        System.out.println("[MESG_OPEN_CHANNEL_ID]");
 	                        break;
 	                case MESG_CHANNEL_ID_ID :
-	                        System.out.println("[MESG_CHANNEL_ID_ID]\n");
+	                        System.out.println("[MESG_CHANNEL_ID_ID]");
 	                        break;
 	                case MESG_NETWORK_KEY_ID :
-	                        System.out.println("[MESG_NETWORK_KEY_ID]\n");
+	                        System.out.println("[MESG_NETWORK_KEY_ID]");
 	                        break;
 	                default :
-	                        System.out.println("[unknown]\n");
+	                        System.out.println("[unknown]: "+ UnicodeFormatter.byteToHex(id));
 	                        break;
 	        }
 
+	        pos = printTimeStamp(rxBuf, pos+4);
+	        /*
 	        //Print out the time stamp
 	        hr = new Byte(rxBuf[4+pos]);
 	        min = new Byte(rxBuf[5+pos]);
 	        sec = new Byte(rxBuf[6+pos]);
 	        
-	        System.out.println("Time stamp: "  + hr.intValue() +":"+min.intValue()+":"+sec.intValue());
+	        System.out.println("Time stamp: "  + hr.intValue() +":"+min.intValue()+":"+sec.intValue()+"\n");
+	        */
 	        
-	        
-	        return pos+6; //Read 3 bytes for loop will increment by 1. Move it forward 6 HR:MIN:SEC
+	        return --pos; //For Loop will move 1 forward
 	}
 	
 	private int ANTCfgCapabilties(int i, int size)
 	{
 		return i+size+4;
 	}	
+	
+    public static int byteArrayToInt(byte[] b, int offset, int size) {
+        int value = 0;
+        for (int i = 0; i < size; i++) {
+            int shift = (size - 1 - i) * 8;
+            value += (b[i + offset] & 0x000000FF) << shift;
+        }
+        return value;
+    }
+
 }
