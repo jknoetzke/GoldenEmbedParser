@@ -38,12 +38,13 @@ public class GoldenEmbedParserMain
     static final byte MESG_OPEN_CHANNEL_ID = (byte)0x4B;
     static final byte MESG_CHANNEL_ID_ID = (byte)0x51; 
     static final byte MESG_NETWORK_KEY_ID  = 0x46;
+    static final double PI = 3.14159265;
     
     float totalTrans = 0;
     float totalErrors = 0;
     boolean errorFlag = false;
 	
-	
+    Power power ;
 
 	int debug = 0;
 
@@ -61,9 +62,16 @@ public class GoldenEmbedParserMain
 		return (int) b & 0xFF;
 	}
 
-	GoldenEmbedParserMain(String[] args) {
+	public GoldenEmbedParserMain()
+	{
+		power = new Power();
+	}
+	
+	public GoldenEmbedParserMain(String[] args) 
+	{
 		// Load up the file
 		File file;
+		power = new Power();
 		
 		if(args.length  != 1)
 			file = new File("/Volumes//DATALOGGER//LOG07.txt");
@@ -95,7 +103,8 @@ public class GoldenEmbedParserMain
 					break;
 				case MESG_BROADCAST_DATA_ID:
 					System.out.println("ID: MESG_BROADCAST_DATA_ID\n");
-					i = ANTparseHRM(rxIN, i+3);
+					//i = ANTparseHRM(rxIN, i+3);
+					i = ANTParsePower(rxIN, i+4, size);
 					break;
 				case MESG_CHANNEL_ID_ID:
 					System.out.println("ID: MESG_CHANNEL_ID_ID\n");
@@ -113,14 +122,10 @@ public class GoldenEmbedParserMain
 	{
 		byte[] devNo = new byte[2];
 		
-		//System.out.println("0x" + UnicodeFormatter.byteToHex(msgIN[pos]));
-
 		pos +=2;
 		devNo[0] = msgIN[pos];
-		//System.out.println("0x" + UnicodeFormatter.byteToHex(msgIN[pos]));
 
 		pos--;
-		//System.out.println("0x" + UnicodeFormatter.byteToHex(msgIN[pos]));
 		devNo[1] = msgIN[pos];
 		
 		int deviceNum = byteArrayToInt(devNo, 0, 2);
@@ -130,9 +135,10 @@ public class GoldenEmbedParserMain
 		System.out.println("Device Type is: 0x" + UnicodeFormatter.byteToHex(msgIN[pos]));
 		System.out.println("Man ID is: 0x" + UnicodeFormatter.byteToHex(msgIN[++pos])+"\n");
 
-		pos = printTimeStamp(msgIN, ++pos);
+		pos +=2;
+		pos = printTimeStamp(msgIN, pos);
 		
-		return pos; 
+		return --pos; 
 	}
 	
 	
@@ -188,6 +194,114 @@ public class GoldenEmbedParserMain
 		return bytes;
 	}
 
+	
+	public int ANTParsePower(byte[] msgData, int i, int size)
+	{
+		int t1;
+		int p1;
+		int r1;
+		
+		int end = i + size -2;
+		double rdiff = 0;
+		double pdiff = 0;
+		double tdiff = 0;
+		double nm = 0;
+		double rpm = 0;
+		double watts = 0;
+		Byte aByte;
+		int msgN = 0;
+		
+		for (; i < end; i++) 
+		{
+			//System.out.println("0x" + UnicodeFormatter.byteToHex(msgData[i])+"\n");
+			if(msgN == 0)
+			{
+	   			 if(power.first12)
+	   			 {
+    			     //Just store it.
+				     aByte = new Byte(msgData[i]);
+	                 power.setR(aByte.intValue());
+	                 //System.out.println("R: " + aByte.intValue());
+	   			 }
+	   			 else
+	   			 {
+	   				 //We can calculate and then store
+	  			     aByte = new Byte(msgData[i]);
+	 				 r1 =  aByte.intValue();
+	 				 rdiff = power.getR() - r1;
+	  			     power.setR(aByte.intValue());
+	                 //System.out.println("rdiff is: " + rdiff);
+	   			 }
+                 msgN++;
+			}
+			else if(msgN == 1)
+			{
+				byte[] pRdiff = new byte[2];
+				i++;
+				pRdiff[1] = msgData[i];
+				//System.out.println("0x" + UnicodeFormatter.byteToHex(msgData[i])+"\n");
+				i++;
+				pRdiff[0] = msgData[i];
+				//System.out.println("0x" + UnicodeFormatter.byteToHex(msgData[i])+"\n");
+				p1 = byteArrayToInt(pRdiff, 0, 2);
+
+				if(power.first12)
+				{
+					power.setP(p1);
+					//System.out.println("P1: " + p1);
+				}
+				else
+				{
+					pdiff =  power.getP() - p1;
+					power.setP(p1);
+					//System.out.println("pdiff is: " + pdiff);
+				}			
+				msgN++;
+			}
+			else if(msgN == 2)
+			{
+				byte[] pRdiff = new byte[2];
+				pRdiff[1] = msgData[i];
+				//System.out.println("0x" + UnicodeFormatter.byteToHex(msgData[i])+"\n");
+				i++;
+				pRdiff[0] = msgData[i];
+				//System.out.println("0x" + UnicodeFormatter.byteToHex(msgData[i])+"\n");
+
+				t1 = byteArrayToInt(pRdiff, 0, 2);
+				
+				if(power.first12)
+				{
+		            power.setT(t1);
+		            //System.out.println("T: " + t1);
+				}
+				else
+				{
+		             tdiff = power.getT() - t1;
+		             power.setT(t1);
+					 //System.out.println("tdiff is: " + tdiff);
+				}
+
+				i++;				
+				msgN++;
+			}
+		}
+        if(tdiff != 0 && rdiff != 0)
+        {
+		    nm = (float)Math.abs(tdiff)/(float)(Math.abs(rdiff)*32.0);
+            rpm = (double)Math.abs(rdiff)*122880.0/(double)Math.abs(pdiff);
+            watts = rpm*nm*2*PI/60;
+            System.out.println("nm: " + nm + " rpm: " + rpm + " watts: " + watts + "\n");
+        }
+        if(power.first12)
+        	power.first12 = false;
+        
+        //System.out.println("0x" + UnicodeFormatter.byteToHex(msgData[i])+"\n");
+		i = printTimeStamp(msgData, i);
+		
+		return --i; //For Loop will advance itself.
+		
+	}
+	
 	private int ANTparseHRM(byte[] msgData, int i) {
 
 		byte aByte;
@@ -206,19 +320,6 @@ public class GoldenEmbedParserMain
 			 //    System.out.println("o" + i + "=" + unsignedByteToInt(aByte));
 			hrCountFinder++;
 		}
-
-	/*
-		Byte hr;
-	    Byte min;
-	    Byte sec;
-		
-        //Print out the time stamp
-        hr = new Byte(msgData[i++]);
-        min = new Byte(msgData[i++]);
-        sec = new Byte(msgData[i++]);
-        
-        System.out.println("Time stamp: "  + hr.intValue() +":"+min.intValue()+":"+sec.intValue());
-		*/
 
 		i = printTimeStamp(msgData, i);
 		
@@ -344,15 +445,7 @@ public class GoldenEmbedParserMain
 	        }
 
 	        pos = printTimeStamp(rxBuf, pos+4);
-	        /*
-	        //Print out the time stamp
-	        hr = new Byte(rxBuf[4+pos]);
-	        min = new Byte(rxBuf[5+pos]);
-	        sec = new Byte(rxBuf[6+pos]);
-	        
-	        System.out.println("Time stamp: "  + hr.intValue() +":"+min.intValue()+":"+sec.intValue()+"\n");
-	        */
-	        
+
 	        return --pos; //For Loop will move 1 forward
 	}
 	
