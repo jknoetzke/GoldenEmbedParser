@@ -21,8 +21,11 @@ package org.shampoo.goldenembed.parser;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintWriter;
 
 public class GoldenEmbedParserMain 
 {
@@ -43,10 +46,16 @@ public class GoldenEmbedParserMain
     float totalTrans = 0;
     float totalErrors = 0;
     boolean errorFlag = false;
+    
+    private static final String spacer1 = "    ";
+    private static final String spacer2 = "        ";
 	
     Power power ;
 
 	int debug = 0;
+	
+	PrintWriter fout;
+	
 
 	/**
 	 * @param args
@@ -54,7 +63,6 @@ public class GoldenEmbedParserMain
 
 	public static void main(String[] args) 
 	{
-		
 		new GoldenEmbedParserMain(args);
 	}
 
@@ -67,35 +75,58 @@ public class GoldenEmbedParserMain
 		power = new Power();
 	}
 	
+	private void initGCFile()
+	{
+	    fout.write("<!DOCTYPE GoldenCheetah>\n");
+	    fout.write("<ride>\n");
+	    fout.write(spacer1 + "<attributes>\n");
+	    fout.write(spacer2 + "<attribute key=\"Start time\" value=\"2010/01/01 00:00:00 UTC\" />\n");
+	    fout.write(spacer2 + "<attribute key=\"Device type\" value=\"Golden Embed\" />\n");
+	    fout.write(spacer1 + "</attributes>\n");
+	    fout.write("<samples>\n");
+	}
 	public GoldenEmbedParserMain(String[] args) 
 	{
 		// Load up the file
 		File file;
 		power = new Power();
+		GoldenCheetah gc = new GoldenCheetah();
 		
 		if(args.length  != 1)
 			file = new File("/Volumes//DATALOGGER//LOG07.txt");
 		else
 			file = new File(args[0]);
 		
+		String parentDir = file.getParent();
+		
+		File outFile = new File(parentDir+"/2010_01_01_00_00_00.gc");
+		try {
+			fout = new PrintWriter(new FileOutputStream(outFile));
+			initGCFile();
+		} catch (FileNotFoundException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+            System.exit(1);
+		}
+		
 		System.out.println("\n"+file.getAbsolutePath()+"\n");
 		
 		try {
-			ANTrxHandler(getBytesFromFile(file));
+			ANTrxHandler(getBytesFromFile(file), gc);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
 
-	private int ANTrxMsg(byte[] rxIN, int i, int size) 
+	private int ANTrxMsg(byte[] rxIN, int i, int size, GoldenCheetah gc) 
 	{
 		    //System.out.println("Converting 0x"+ UnicodeFormatter.byteToHex(rxIN[i]));
 			switch (rxIN[i]) 
 			{
 				case MESG_RESPONSE_EVENT_ID:
 					System.out.println("ID: MESG_RESPONSE_EVENT_ID\n");
-					i = ANTresponseHandler(rxIN, i, size);
+					i = ANTresponseHandler(rxIN, i, size, gc);
 					break;
 				case MESG_CAPABILITIES_ID:
 					System.out.println("ID: MESG_CAPABILITIES_ID\n");
@@ -103,12 +134,14 @@ public class GoldenEmbedParserMain
 					break;
 				case MESG_BROADCAST_DATA_ID:
 					System.out.println("ID: MESG_BROADCAST_DATA_ID\n");
-					//i = ANTparseHRM(rxIN, i+3);
-					i = ANTParsePower(rxIN, i+4, size);
+					if(gc.getChannel() == 0)
+					    i = ANTparseHRM(rxIN, i+3, gc);
+					else
+					    i = ANTParsePower(rxIN, i+4, size, gc);
 					break;
 				case MESG_CHANNEL_ID_ID:
 					System.out.println("ID: MESG_CHANNEL_ID_ID\n");
-					i = ANTChannelID(rxIN, ++i);
+					i = ANTChannelID(rxIN, ++i, gc);
 					break;
 					
 					
@@ -118,7 +151,7 @@ public class GoldenEmbedParserMain
 			return i;
 	}
 
-	public int ANTChannelID(byte[] msgIN, int pos)
+	public int ANTChannelID(byte[] msgIN, int pos, GoldenCheetah gc)
 	{
 		byte[] devNo = new byte[2];
 		
@@ -136,13 +169,13 @@ public class GoldenEmbedParserMain
 		System.out.println("Man ID is: 0x" + UnicodeFormatter.byteToHex(msgIN[++pos])+"\n");
 
 		pos +=2;
-		pos = printTimeStamp(msgIN, pos);
+		pos = setTimeStamp(msgIN, pos, gc);
 		
 		return --pos; 
 	}
 	
 	
-	public int printTimeStamp(byte[] msgData, int i)
+	public int setTimeStamp(byte[] msgData, int i, GoldenCheetah gc)
 	{
 		Byte hr;
 	    Byte min;
@@ -152,6 +185,9 @@ public class GoldenEmbedParserMain
         hr = new Byte(msgData[i++]);
         min = new Byte(msgData[i++]);
         sec = new Byte(msgData[i++]);
+        
+        gc.setSecs((hr*60*60)+(min*60)+sec);
+        
         
         System.out.println("Time stamp: "  + hr.intValue() +":"+min.intValue()+":"+sec.intValue());
 
@@ -195,7 +231,7 @@ public class GoldenEmbedParserMain
 	}
 
 	
-	public int ANTParsePower(byte[] msgData, int i, int size)
+	public int ANTParsePower(byte[] msgData, int i, int size, GoldenCheetah gc)
 	{
 		int t1;
 		int p1;
@@ -291,29 +327,37 @@ public class GoldenEmbedParserMain
             rpm = (double)Math.abs(rdiff)*122880.0/(double)Math.abs(pdiff);
             watts = rpm*nm*2*PI/60;
             System.out.println("nm: " + nm + " rpm: " + rpm + " watts: " + watts + "\n");
+            
+            gc.setCad((int)rpm);
+            gc.setWatts((int)watts);
+    		i = setTimeStamp(msgData, i, gc);
+            writeGCRecord(gc);
         }
+        else
+    		i = setTimeStamp(msgData, i, gc);
+        	
         if(power.first12)
         	power.first12 = false;
         
         //System.out.println("0x" + UnicodeFormatter.byteToHex(msgData[i])+"\n");
-		i = printTimeStamp(msgData, i);
 		
 		return --i; //For Loop will advance itself.
 		
 	}
 	
-	private int ANTparseHRM(byte[] msgData, int i) {
+	private int ANTparseHRM(byte[] msgData, int i, GoldenCheetah gc) {
 
 		byte aByte;
 		int end = i + 8;
 		int hrCountFinder = 0;
+		int hr = 0;
 
 		for (; i < end; i++) {
 			aByte = msgData[i];
 			//System.out.println("Converting 0x"+ UnicodeFormatter.byteToHex(msgData[i]));
 			if (hrCountFinder == 6) { //HR is the sixth byte
 	//			System.out.println("Converting 0x"+ UnicodeFormatter.byteToHex(msgData[i]));
-				int hr = unsignedByteToInt(aByte);
+				hr = unsignedByteToInt(aByte);
 				System.out.println("Heart Rate is: " + hr);
 			}
 			 //else
@@ -321,12 +365,13 @@ public class GoldenEmbedParserMain
 			hrCountFinder++;
 		}
 
-		i = printTimeStamp(msgData, i);
-		
+		i = setTimeStamp(msgData, i, gc);
+        gc.setHr(hr);
+		writeGCRecord(gc);
 		return --i; //For Loop will advance itself.
 	}
 
-	private void ANTrxHandler(byte[] rxBuf )
+	private void ANTrxHandler(byte[] rxBuf, GoldenCheetah gc )
 	{
 		int msgN = 0;
 		int i;
@@ -366,7 +411,7 @@ public class GoldenEmbedParserMain
 	             {
 	            	 inMsg = true;
 	            	 // Handle Message
-	                 i = ANTrxMsg(rxBuf, i, size);
+	                 i = ANTrxMsg(rxBuf, i, size, gc);
 	             }
 	             else
 	             {
@@ -381,12 +426,21 @@ public class GoldenEmbedParserMain
 	             } 
 	         }
           }
+		
+		 closeGCFile();
 		 System.out.println("\n\nTotal Errors: " + totalErrors);
 		 System.out.println("Total Messages " + totalTrans);
 		 System.out.println("%: " + (totalErrors / totalTrans) * 100.0);
 
     }
 	
+	private void closeGCFile()
+	{
+		fout.write(spacer1 + "</samples>\n");
+		fout.write("</ride>\n");
+		fout.flush();
+		fout.close();
+	}
 	private byte checkSum(byte data[], int length, int pos)
 	{
 
@@ -401,18 +455,16 @@ public class GoldenEmbedParserMain
 	        return chksum;
 	}
 	
-	private int ANTresponseHandler(byte rxBuf[], int pos, int size)
+	private int ANTresponseHandler(byte rxBuf[], int pos, int size, GoldenCheetah gc)
 	{
-		    Byte hr;
-		    Byte min;
-		    Byte sec;
-		    
 		    pos++;
 	        byte ch = rxBuf[0+pos];
 	        byte id = rxBuf[1+pos];
 	        byte code = rxBuf[2+pos];
 
 	        System.out.println("Channel Num:" + UnicodeFormatter.byteToHex(ch));
+	        Byte aByte = new Byte(code);
+	        gc.setChannel(aByte.intValue()); //Store the channel.
 	        System.out.println("Message ID: " + UnicodeFormatter.byteToHex(id));
 	        System.out.println("Code: " + UnicodeFormatter.byteToHex(code));
 
@@ -444,7 +496,7 @@ public class GoldenEmbedParserMain
 	                        break;
 	        }
 
-	        pos = printTimeStamp(rxBuf, pos+4);
+	        pos = setTimeStamp(rxBuf, pos+4, gc);
 
 	        return --pos; //For Loop will move 1 forward
 	}
@@ -463,4 +515,8 @@ public class GoldenEmbedParserMain
         return value;
     }
 
+    private void writeGCRecord(GoldenCheetah gc)
+    {
+        fout.write(spacer1 + "<sample cad=\""+gc.getCad()+ "\" watts=\""+ gc.getWatts() + "\" secs=\"" + gc.getSecs() +"\" hr=\""+gc.getHr()+"\" len=\"1\"/>\n");	
+    }
 }
