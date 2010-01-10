@@ -134,8 +134,10 @@ public class GoldenEmbedParserMain
 					break;
 				case MESG_BROADCAST_DATA_ID:
 					System.out.println("ID: MESG_BROADCAST_DATA_ID\n");
-					if(gc.getChannel() == 0)
-					    i = ANTparseHRM(rxIN, i+3, gc);
+					Byte aByte = new Byte(rxIN[++i]);
+					int chan = aByte.intValue();
+					if(chan == 0)
+					    i = ANTparseHRM(rxIN, i+2, gc);
 					else
 					    i = ANTParsePower(rxIN, i+4, size, gc);
 					break;
@@ -356,7 +358,7 @@ public class GoldenEmbedParserMain
 			aByte = msgData[i];
 			//System.out.println("Converting 0x"+ UnicodeFormatter.byteToHex(msgData[i]));
 			if (hrCountFinder == 6) { //HR is the sixth byte
-	//			System.out.println("Converting 0x"+ UnicodeFormatter.byteToHex(msgData[i]));
+				//System.out.println("Converting 0x"+ UnicodeFormatter.byteToHex(msgData[i]));
 				hr = unsignedByteToInt(aByte);
 				System.out.println("Heart Rate is: " + hr);
 			}
@@ -463,8 +465,6 @@ public class GoldenEmbedParserMain
 	        byte code = rxBuf[2+pos];
 
 	        System.out.println("Channel Num:" + UnicodeFormatter.byteToHex(ch));
-	        Byte aByte = new Byte(code);
-	        gc.setChannel(aByte.intValue()); //Store the channel.
 	        System.out.println("Message ID: " + UnicodeFormatter.byteToHex(id));
 	        System.out.println("Code: " + UnicodeFormatter.byteToHex(code));
 
