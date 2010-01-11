@@ -139,7 +139,7 @@ public class GoldenEmbedParserMain
 					if(chan == 0)
 					    i = ANTparseHRM(rxIN, i+2, gc);
 					else
-					    i = ANTParsePower(rxIN, i+4, size, gc);
+					    i = ANTParsePower(rxIN, i+3, size, gc);
 					break;
 				case MESG_CHANNEL_ID_ID:
 					System.out.println("ID: MESG_CHANNEL_ID_ID\n");
@@ -171,13 +171,13 @@ public class GoldenEmbedParserMain
 		System.out.println("Man ID is: 0x" + UnicodeFormatter.byteToHex(msgIN[++pos])+"\n");
 
 		pos +=2;
-		pos = setTimeStamp(msgIN, pos, gc);
+		pos = setTimeStamp(msgIN, pos, gc, false);
 		
 		return --pos; 
 	}
 	
 	
-	public int setTimeStamp(byte[] msgData, int i, GoldenCheetah gc)
+	public int setTimeStamp(byte[] msgData, int i, GoldenCheetah gc, boolean write)
 	{
 		Byte hr;
 	    Byte min;
@@ -188,7 +188,8 @@ public class GoldenEmbedParserMain
         min = new Byte(msgData[i++]);
         sec = new Byte(msgData[i++]);
         
-        gc.setSecs((hr*60*60)+(min*60)+sec);
+        if(write)
+            gc.setSecs((hr*60*60)+(min*60)+sec);
         
         
         System.out.println("Time stamp: "  + hr.intValue() +":"+min.intValue()+":"+sec.intValue());
@@ -229,6 +230,7 @@ public class GoldenEmbedParserMain
 
 		// Close the input stream and return bytes
 		is.close();
+		//System.out.println("Total Bytes: " + bytes.length);
 		return bytes;
 	}
 
@@ -251,7 +253,7 @@ public class GoldenEmbedParserMain
 		
 		for (; i < end; i++) 
 		{
-			//System.out.println("0x" + UnicodeFormatter.byteToHex(msgData[i])+"\n");
+			//System.out.println("0x" + UnicodeFormatter.byteToHex(msgData[i]));
 			if(msgN == 0)
 			{
 	   			 if(power.first12)
@@ -328,15 +330,23 @@ public class GoldenEmbedParserMain
 		    nm = (float)Math.abs(tdiff)/(float)(Math.abs(rdiff)*32.0);
             rpm = (double)Math.abs(rdiff)*122880.0/(double)Math.abs(pdiff);
             watts = rpm*nm*2*PI/60;
-            System.out.println("nm: " + nm + " rpm: " + rpm + " watts: " + watts + "\n");
             
-            gc.setCad((int)rpm);
-            gc.setWatts((int)watts);
-    		i = setTimeStamp(msgData, i, gc);
-            writeGCRecord(gc);
+            System.out.println("nm: " + nm + " rpm: " + rpm + " watts: " + watts + "\n");
+    		i = setTimeStamp(msgData, i, gc, true);
+
+            if(gc.getPrevsecs() != gc.getSecs())
+           	{
+            	if(rpm < 10000 && watts < 10000)
+            	{
+                    gc.setCad((int)rpm);
+                    gc.setWatts((int)watts);
+                    writeGCRecord(gc);
+                    gc.setPrevsecs(gc.getSecs());
+            	}
+           	}
         }
         else
-    		i = setTimeStamp(msgData, i, gc);
+    		i = setTimeStamp(msgData, i, gc, false);
         	
         if(power.first12)
         	power.first12 = false;
@@ -367,9 +377,13 @@ public class GoldenEmbedParserMain
 			hrCountFinder++;
 		}
 
-		i = setTimeStamp(msgData, i, gc);
-        gc.setHr(hr);
-		writeGCRecord(gc);
+		i = setTimeStamp(msgData, i, gc, true);
+		if(gc.getPrevsecs() != gc.getSecs())
+		{
+            gc.setHr(hr);
+		    writeGCRecord(gc);
+		}
+		gc.setPrevsecs(gc.getSecs());
 		return --i; //For Loop will advance itself.
 	}
 
@@ -401,11 +415,12 @@ public class GoldenEmbedParserMain
 	         }
 	         else
 	         {
-	        	 if(rxBuf.length < size+3+i-2)
+	        	 if(rxBuf.length <= size+i+1)
 	        	 {
 	        		 System.out.println("\n\nTotal Errors: " + totalErrors);
 	        		 System.out.println("Total Messages " + totalTrans);
 	        		 System.out.println("%: " +totalErrors / totalTrans * 100.0);
+	        		 closeGCFile();
 	        		 System.exit(0); //EOF
 	        	 }
 	        	 byte checksum = checkSum(rxBuf, size, i-2);
@@ -496,7 +511,7 @@ public class GoldenEmbedParserMain
 	                        break;
 	        }
 
-	        pos = setTimeStamp(rxBuf, pos+4, gc);
+	        pos = setTimeStamp(rxBuf, pos+4, gc, false);
 
 	        return --pos; //For Loop will move 1 forward
 	}
@@ -517,6 +532,10 @@ public class GoldenEmbedParserMain
 
     private void writeGCRecord(GoldenCheetah gc)
     {
-        fout.write(spacer1 + "<sample cad=\""+gc.getCad()+ "\" watts=\""+ gc.getWatts() + "\" secs=\"" + gc.getSecs() +"\" hr=\""+gc.getHr()+"\" len=\"1\"/>\n");	
-    }
+    	int foo;
+    	if(gc.getWatts() == 18163)
+    		foo = 3;
+           fout.write(spacer1 + "<sample cad=\""+gc.getCad()+ "\" watts=\""+ gc.getWatts() + "\" secs=\"" + gc.getSecs() +"\" hr=\""+gc.getHr()+"\" len=\"1\"/>\n");	
+    } 
+         
 }

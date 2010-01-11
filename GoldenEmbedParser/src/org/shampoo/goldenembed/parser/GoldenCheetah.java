@@ -7,16 +7,16 @@ public class GoldenCheetah
 	private int cad;
 	private int watts;
 	private int secs;
+	private int prevsecs;
+	public int getPrevsecs() {
+		return prevsecs;
+	}
+	public void setPrevsecs(int prevsecs) {
+		this.prevsecs = prevsecs;
+	}
 	private int hr;
 	private int len;
-	private int channel;
-	
-	public int getChannel() {
-		return channel;
-	}
-	public void setChannel(int channel) {
-		this.channel = channel;
-	}
+
 	public int getCad() {
 		return cad;
 	}
