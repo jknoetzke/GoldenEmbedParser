@@ -316,6 +316,8 @@ public class GoldenEmbedParserMain
 	  			     aByte = new Byte(msgData[i]);
 	 				 r1 =  aByte.intValue();
 	 				 rdiff = power.getR() - r1;
+           if (rdiff>250)
+               rdiff=power.getR() - (r1+255);
 	  			     power.setR(aByte.intValue());
 	                 //System.out.println("rdiff is: " + rdiff);
 	   			 }
@@ -340,6 +342,8 @@ public class GoldenEmbedParserMain
 				else
 				{
 					pdiff =  power.getP() - p1;
+          if (pdiff>60000)
+              pdiff=power.getP()-(p1+65536);
 					power.setP(p1);
 					//System.out.println("pdiff is: " + pdiff);
 				}			
@@ -364,6 +368,8 @@ public class GoldenEmbedParserMain
 				else
 				{
 		             tdiff = power.getT() - t1;
+                 if (tdiff>60000)
+                     tdiff=power.getT()-(t1+65536);
 		             power.setT(t1);
 					 //System.out.println("tdiff is: " + tdiff);
 				}
@@ -390,8 +396,11 @@ public class GoldenEmbedParserMain
                     writeGCRecord(gc);
                     gc.setPrevsecs(gc.getSecs());
             	}
-            	else
-            		totalSpikes++;
+            	else 
+                  {
+                      if(debug) System.out.println("Spike Found: pdiff: " + pdiff + " rdiff: " + rdiff + " tdiff: " + tdiff + "\n");
+                      totalSpikes++;
+                  }
            	}
         }
         else
@@ -445,8 +454,6 @@ public class GoldenEmbedParserMain
 		
 		for (i = 0; i < rxBuf.length; i++)
 	    {
-			System.out.println("0x"+ UnicodeFormatter.byteToHex(rxBuf[i]));
-			
 	    	if (rxBuf[i] == MESG_TX_SYNC && inMsg)
 	        {
 	    		    inMsg = false;
