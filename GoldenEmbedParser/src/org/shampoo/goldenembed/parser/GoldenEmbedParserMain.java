@@ -26,6 +26,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
+import java.util.Calendar;
 
 public class GoldenEmbedParserMain 
 {
@@ -46,13 +47,15 @@ public class GoldenEmbedParserMain
     float totalTrans = 0;
     float totalErrors = 0;
     boolean errorFlag = false;
+    long totalSpikes = 0;
+   
     
     private static final String spacer1 = "    ";
     private static final String spacer2 = "        ";
 	
     Power power ;
 
-	int debug = 0;
+	boolean debug = false;
 	
 	PrintWriter fout;
 	
@@ -85,21 +88,58 @@ public class GoldenEmbedParserMain
 	    fout.write(spacer1 + "</attributes>\n");
 	    fout.write("<samples>\n");
 	}
+	
+	private String formatDate(int toFormat)
+	{
+		String forMatted;
+		forMatted = new Integer(toFormat).toString();
+		if(forMatted.length() < 2)
+			forMatted = "0" + forMatted;
+		
+		return forMatted;
+		
+	}
+	
 	public GoldenEmbedParserMain(String[] args) 
 	{
 		// Load up the file
-		File file;
+		File file = null;
 		power = new Power();
 		GoldenCheetah gc = new GoldenCheetah();
 		
-		if(args.length  != 1)
-			file = new File("/Volumes//DATALOGGER//LOG07.txt");
+		if(args.length  < 1)
+		{
+		    System.out.println("Missing Input File");
+		    System.exit(1);
+		}
+			
 		else
 			file = new File(args[0]);
 		
+		if(args.length == 2)
+		{
+			if(args[1].equals("-d"));
+			    debug = true;
+		}
+		        
+			
 		String parentDir = file.getParent();
 		
-		File outFile = new File(parentDir+"/2010_01_01_00_00_00.gc");
+		Calendar cal = Calendar.getInstance();
+		int date = cal.get(Calendar.MONTH);
+		date++;
+		
+		String strMonth = formatDate(date);
+		date = cal.get(Calendar.DAY_OF_MONTH);
+		String strDay = formatDate(date);;
+		date = cal.get(Calendar.HOUR);
+		String strHour = formatDate(date);;
+		date = cal.get(Calendar.MINUTE);
+		String strMin = formatDate(date);;
+		date = cal.get(Calendar.SECOND);
+		String strSec = formatDate(date);; 
+		
+		File outFile = new File(parentDir+"/"+cal.get(Calendar.YEAR)+"_"+strMonth+"_"+strDay+"_"+strHour+"_"+strMin+"_"+strSec+".gc");
 		try {
 			fout = new PrintWriter(new FileOutputStream(outFile));
 			initGCFile();
@@ -109,7 +149,8 @@ public class GoldenEmbedParserMain
             System.exit(1);
 		}
 		
-		System.out.println("\n"+file.getAbsolutePath()+"\n");
+		System.out.println("Input File: "+ file.getAbsolutePath());
+		System.out.println("GC Formatted File: " + outFile.toString());
 		
 		try {
 			ANTrxHandler(getBytesFromFile(file), gc);
@@ -125,30 +166,30 @@ public class GoldenEmbedParserMain
 			switch (rxIN[i]) 
 			{
 				case MESG_RESPONSE_EVENT_ID:
-					System.out.println("ID: MESG_RESPONSE_EVENT_ID\n");
+					if(debug) System.out.println("ID: MESG_RESPONSE_EVENT_ID\n");
 					i = ANTresponseHandler(rxIN, i, size, gc);
 					break;
 				case MESG_CAPABILITIES_ID:
-					System.out.println("ID: MESG_CAPABILITIES_ID\n");
+					if(debug) System.out.println("ID: MESG_CAPABILITIES_ID\n");
 					i = ANTCfgCapabilties(i, size); // rxBuf[3] .. skip sync, size, msg
 					break;
 				case MESG_BROADCAST_DATA_ID:
-					System.out.println("ID: MESG_BROADCAST_DATA_ID\n");
+					if(debug) System.out.println("ID: MESG_BROADCAST_DATA_ID\n");
 					Byte aByte = new Byte(rxIN[++i]);
 					int chan = aByte.intValue();
 					if(chan == 0)
 					    i = ANTparseHRM(rxIN, i+2, gc);
 					else
-					    i = ANTParsePower(rxIN, i+3, size, gc);
+					    i = ANTParsePower(rxIN, ++i, size, gc);
 					break;
 				case MESG_CHANNEL_ID_ID:
-					System.out.println("ID: MESG_CHANNEL_ID_ID\n");
+					if(debug) System.out.println("ID: MESG_CHANNEL_ID_ID\n");
 					i = ANTChannelID(rxIN, ++i, gc);
 					break;
 					
 					
 				default:
-					//System.out.println("ID: Unknown 0x" + UnicodeFormatter.byteToHex(rxIN[i]));
+					if(debug) System.out.println("ID: Unknown 0x" + UnicodeFormatter.byteToHex(rxIN[i]));
 			}
 			return i;
 	}
@@ -164,11 +205,11 @@ public class GoldenEmbedParserMain
 		devNo[1] = msgIN[pos];
 		
 		int deviceNum = byteArrayToInt(devNo, 0, 2);
-		System.out.println("Device Number is: " + deviceNum);
+		if(debug) System.out.println("Device Number is: " + deviceNum);
 
 		pos += 2;
-		System.out.println("Device Type is: 0x" + UnicodeFormatter.byteToHex(msgIN[pos]));
-		System.out.println("Man ID is: 0x" + UnicodeFormatter.byteToHex(msgIN[++pos])+"\n");
+		if(debug) System.out.println("Device Type is: 0x" + UnicodeFormatter.byteToHex(msgIN[pos]));
+		if(debug) System.out.println("Man ID is: 0x" + UnicodeFormatter.byteToHex(msgIN[++pos])+"\n");
 
 		pos +=2;
 		pos = setTimeStamp(msgIN, pos, gc, false);
@@ -192,7 +233,7 @@ public class GoldenEmbedParserMain
             gc.setSecs((hr*60*60)+(min*60)+sec);
         
         
-        System.out.println("Time stamp: "  + hr.intValue() +":"+min.intValue()+":"+sec.intValue());
+        if(debug) System.out.println("Time stamp: "  + hr.intValue() +":"+min.intValue()+":"+sec.intValue());
 
         return i;
 	}
@@ -241,6 +282,12 @@ public class GoldenEmbedParserMain
 		int p1;
 		int r1;
 		
+		if(msgData[i] != 0x12)
+			return i+size+2;
+		else
+			i += 2;
+		
+		
 		int end = i + size -2;
 		double rdiff = 0;
 		double pdiff = 0;
@@ -253,7 +300,7 @@ public class GoldenEmbedParserMain
 		
 		for (; i < end; i++) 
 		{
-			//System.out.println("0x" + UnicodeFormatter.byteToHex(msgData[i]));
+			if(debug) System.out.println("0x" + UnicodeFormatter.byteToHex(msgData[i]));
 			if(msgN == 0)
 			{
 	   			 if(power.first12)
@@ -331,7 +378,7 @@ public class GoldenEmbedParserMain
             rpm = (double)Math.abs(rdiff)*122880.0/(double)Math.abs(pdiff);
             watts = rpm*nm*2*PI/60;
             
-            System.out.println("nm: " + nm + " rpm: " + rpm + " watts: " + watts + "\n");
+            if(debug) System.out.println("nm: " + nm + " rpm: " + rpm + " watts: " + watts + "\n");
     		i = setTimeStamp(msgData, i, gc, true);
 
             if(gc.getPrevsecs() != gc.getSecs())
@@ -343,6 +390,8 @@ public class GoldenEmbedParserMain
                     writeGCRecord(gc);
                     gc.setPrevsecs(gc.getSecs());
             	}
+            	else
+            		totalSpikes++;
            	}
         }
         else
@@ -370,7 +419,7 @@ public class GoldenEmbedParserMain
 			if (hrCountFinder == 6) { //HR is the sixth byte
 				//System.out.println("Converting 0x"+ UnicodeFormatter.byteToHex(msgData[i]));
 				hr = unsignedByteToInt(aByte);
-				System.out.println("Heart Rate is: " + hr);
+				if(debug) System.out.println("Heart Rate is: " + hr);
 			}
 			 //else
 			 //    System.out.println("o" + i + "=" + unsignedByteToInt(aByte));
@@ -396,7 +445,7 @@ public class GoldenEmbedParserMain
 		
 		for (i = 0; i < rxBuf.length; i++)
 	    {
-			//System.out.println("0x"+ UnicodeFormatter.byteToHex(rxBuf[i]));
+			System.out.println("0x"+ UnicodeFormatter.byteToHex(rxBuf[i]));
 			
 	    	if (rxBuf[i] == MESG_TX_SYNC && inMsg)
 	        {
@@ -417,9 +466,9 @@ public class GoldenEmbedParserMain
 	         {
 	        	 if(rxBuf.length <= size+i+1)
 	        	 {
-	        		 System.out.println("\n\nTotal Errors: " + totalErrors);
-	        		 System.out.println("Total Messages " + totalTrans);
-	        		 System.out.println("%: " +totalErrors / totalTrans * 100.0);
+	        		 System.out.println("\nTotal Failed Checksums: : " + totalErrors + "Out of Total ANT Messages: " + totalTrans);
+	        		 System.out.println("% Failure: " + (totalErrors / totalTrans) * 100.0);
+	        		 System.out.println("Total CAD or Watt Spikes: " + totalSpikes);
 	        		 closeGCFile();
 	        		 System.exit(0); //EOF
 	        	 }
@@ -443,11 +492,10 @@ public class GoldenEmbedParserMain
 	             } 
 	         }
           }
-		
+		 System.out.println("\n\nTotal Failed Checksums: " + totalErrors + " Out of Total ANT Messages: " + totalTrans);
+		 System.out.println("% Failure: " + (totalErrors / totalTrans) * 100.0);
+		 System.out.println("Total CAD or Watt Spikes: " + totalSpikes);
 		 closeGCFile();
-		 System.out.println("\n\nTotal Errors: " + totalErrors);
-		 System.out.println("Total Messages " + totalTrans);
-		 System.out.println("%: " + (totalErrors / totalTrans) * 100.0);
 
     }
 	
@@ -479,35 +527,35 @@ public class GoldenEmbedParserMain
 	        byte id = rxBuf[1+pos];
 	        byte code = rxBuf[2+pos];
 
-	        System.out.println("Channel Num:" + UnicodeFormatter.byteToHex(ch));
-	        System.out.println("Message ID: " + UnicodeFormatter.byteToHex(id));
-	        System.out.println("Code: " + UnicodeFormatter.byteToHex(code));
+	        if(debug) System.out.println("Channel Num:" + UnicodeFormatter.byteToHex(ch));
+	        if(debug) System.out.println("Message ID: " + UnicodeFormatter.byteToHex(id));
+	        if(debug) System.out.println("Code: " + UnicodeFormatter.byteToHex(code));
 
 	        switch (id)
 	        {
 	                case MESG_CHANNEL_SEARCH_TIMEOUT_ID:
-	                        System.out.println("[MESG_CHANNEL_SEARCH_TIMEOUT_ID]");
+	                	if(debug) System.out.println("[MESG_CHANNEL_SEARCH_TIMEOUT_ID]");
 	                        break;
 	                case MESG_ASSIGN_CHANNEL_ID :
-	                        System.out.println("[MESG_ASSIGN_CHANNEL_ID]");
+	                	if(debug) System.out.println("[MESG_ASSIGN_CHANNEL_ID]");
 	                        break;
 	                case MESG_CHANNEL_RADIO_FREQ_ID :
-	                        System.out.println("[MESG_CHANNEL_RADIO_FREQ_ID]");
+	                	if(debug) System.out.println("[MESG_CHANNEL_RADIO_FREQ_ID]");
 	                        break;
 	                case MESG_CHANNEL_MESG_PERIOD_ID :
-	                        System.out.println("[MESG_CHANNEL_MESG_PERIOD_ID]");
+	                	if(debug) System.out.println("[MESG_CHANNEL_MESG_PERIOD_ID]");
 	                        break;
 	                case MESG_OPEN_CHANNEL_ID :
-	                        System.out.println("[MESG_OPEN_CHANNEL_ID]");
+	                	if(debug) System.out.println("[MESG_OPEN_CHANNEL_ID]");
 	                        break;
 	                case MESG_CHANNEL_ID_ID :
-	                        System.out.println("[MESG_CHANNEL_ID_ID]");
+	                	if(debug) System.out.println("[MESG_CHANNEL_ID_ID]");
 	                        break;
 	                case MESG_NETWORK_KEY_ID :
-	                        System.out.println("[MESG_NETWORK_KEY_ID]");
+	                	if(debug) System.out.println("[MESG_NETWORK_KEY_ID]");
 	                        break;
 	                default :
-	                        System.out.println("[unknown]: "+ UnicodeFormatter.byteToHex(id));
+	                	if(debug) System.out.println("[unknown]: "+ UnicodeFormatter.byteToHex(id));
 	                        break;
 	        }
 
@@ -532,10 +580,7 @@ public class GoldenEmbedParserMain
 
     private void writeGCRecord(GoldenCheetah gc)
     {
-    	int foo;
-    	if(gc.getWatts() == 18163)
-    		foo = 3;
-           fout.write(spacer1 + "<sample cad=\""+gc.getCad()+ "\" watts=\""+ gc.getWatts() + "\" secs=\"" + gc.getSecs() +"\" hr=\""+gc.getHr()+"\" len=\"1\"/>\n");	
+        fout.write(spacer1 + "<sample cad=\""+gc.getCad()+ "\" watts=\""+ gc.getWatts() + "\" secs=\"" + gc.getSecs() +"\" hr=\""+gc.getHr()+"\" len=\"1\"/>\n");	
     } 
          
 }
