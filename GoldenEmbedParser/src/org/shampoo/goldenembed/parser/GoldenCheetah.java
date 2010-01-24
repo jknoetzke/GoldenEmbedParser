@@ -8,7 +8,16 @@ public class GoldenCheetah
      private int watts;
      private int secs;
      private int prevsecs;
-     public int getPrevsecs() {
+     private int prevWattsecs;
+     
+     
+     public int getPrevWattsecs() {
+		return prevWattsecs;
+	}
+	public void setPrevWattsecs(int prevWattsecs) {
+		this.prevWattsecs = prevWattsecs;
+	}
+	public int getPrevsecs() {
           return prevsecs;
      }
      public void setPrevsecs(int prevsecs) {
