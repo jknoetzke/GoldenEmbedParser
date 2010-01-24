@@ -53,6 +53,7 @@ public class GoldenEmbedParserMain {
     Power power;
 
     boolean debug = false;
+    boolean megaDebug = false;
 
     PrintWriter fout;
 
@@ -108,7 +109,12 @@ public class GoldenEmbedParserMain {
 
         if (args.length == 2) {
             if (args[1].equals("-d"))
-            debug = true;
+                debug = true;
+            else if(args[1].equals("-dd"))
+            {
+               debug = true;
+               megaDebug = true;
+            }
         }
 
         String parentDir = file.getParent();
@@ -154,8 +160,7 @@ public class GoldenEmbedParserMain {
     }
 
     private int ANTrxMsg(byte[] rxIN, int i, int size, GoldenCheetah gc) {
-        // System.out.println("Converting 0x"+
-        // UnicodeFormatter.byteToHex(rxIN[i]));
+        if(megaDebug) System.out.println("Converting 0x"+ UnicodeFormatter.byteToHex(rxIN[i]));
         switch (rxIN[i]) {
         case MESG_RESPONSE_EVENT_ID:
             if (debug)
@@ -264,7 +269,7 @@ public class GoldenEmbedParserMain {
 
         // Close the input stream and return bytes
         is.close();
-        // System.out.println("Total Bytes: " + bytes.length);
+        if(megaDebug) System.out.println("Total Bytes: " + bytes.length);
         return bytes;
     }
 
@@ -289,14 +294,14 @@ public class GoldenEmbedParserMain {
         int msgN = 0;
 
         for (; i < end; i++) {
-            if (debug)
+            if (megaDebug)
                 System.out.println("0x" + UnicodeFormatter.byteToHex(msgData[i]));
             if (msgN == 0) {
                 if (power.first12) {
                     // Just store it.
                     aByte = new Byte(msgData[i]);
                     power.setR(aByte.intValue());
-                    // System.out.println("R: " + aByte.intValue());
+                    if(megaDebug) System.out.println("R: " + aByte.intValue());
                 } else {
                     // We can calculate and then store
                     aByte = new Byte(msgData[i]);
@@ -305,53 +310,49 @@ public class GoldenEmbedParserMain {
                     if (rdiff > 250)
                         rdiff = power.getR() - (r1 + 255);
                     power.setR(aByte.intValue());
-                    // System.out.println("rdiff is: " + rdiff);
+                    if(megaDebug) System.out.println("rdiff is: " + rdiff);
                 }
                 msgN++;
             } else if (msgN == 1) {
                 byte[] pRdiff = new byte[2];
                 i++;
                 pRdiff[1] = msgData[i];
-                // System.out.println("0x" +
-                // UnicodeFormatter.byteToHex(msgData[i])+"\n");
+                if(megaDebug) System.out.println("0x" + UnicodeFormatter.byteToHex(msgData[i])+"\n");
                 i++;
                 pRdiff[0] = msgData[i];
-                // System.out.println("0x" +
-                // UnicodeFormatter.byteToHex(msgData[i])+"\n");
+                if(megaDebug) System.out.println("0x" + UnicodeFormatter.byteToHex(msgData[i])+"\n");
                 p1 = byteArrayToInt(pRdiff, 0, 2);
 
                 if (power.first12) {
                     power.setP(p1);
-                    // System.out.println("P1: " + p1);
+                    if(megaDebug) System.out.println("P1: " + p1);
                 } else {
                     pdiff = power.getP() - p1;
                     if (pdiff > 60000)
                         pdiff = power.getP() - (p1 + 65536);
                     power.setP(p1);
-                    // System.out.println("pdiff is: " + pdiff);
+                    if(megaDebug) System.out.println("pdiff is: " + pdiff);
                 }
                 msgN++;
             } else if (msgN == 2) {
                 byte[] pRdiff = new byte[2];
                 pRdiff[1] = msgData[i];
-                // System.out.println("0x" +
-                // UnicodeFormatter.byteToHex(msgData[i])+"\n");
+                if(megaDebug) System.out.println("0x" + UnicodeFormatter.byteToHex(msgData[i])+"\n");
                 i++;
                 pRdiff[0] = msgData[i];
-                // System.out.println("0x" +
-                // UnicodeFormatter.byteToHex(msgData[i])+"\n");
+                if(megaDebug) System.out.println("0x" + UnicodeFormatter.byteToHex(msgData[i])+"\n");
 
                 t1 = byteArrayToInt(pRdiff, 0, 2);
 
                 if (power.first12) {
                     power.setT(t1);
-                    // System.out.println("T: " + t1);
+                    if(megaDebug) System.out.println("T: " + t1);
                 } else {
                     tdiff = power.getT() - t1;
                     if (tdiff > 60000)
                         tdiff = power.getT() - (t1 + 65536);
                     power.setT(t1);
-                    // System.out.println("tdiff is: " + tdiff);
+                    if(megaDebug) System.out.println("tdiff is: " + tdiff);
                 }
 
                 i++;
@@ -386,8 +387,7 @@ public class GoldenEmbedParserMain {
         if (power.first12)
             power.first12 = false;
 
-        // System.out.println("0x" +
-        // UnicodeFormatter.byteToHex(msgData[i])+"\n");
+        if(megaDebug)  System.out.println("0x" + UnicodeFormatter.byteToHex(msgData[i])+"\n");
 
         return --i; // For Loop will advance itself.
 
@@ -402,17 +402,15 @@ public class GoldenEmbedParserMain {
 
         for (; i < end; i++) {
             aByte = msgData[i];
-            // System.out.println("Converting 0x"+
-            // UnicodeFormatter.byteToHex(msgData[i]));
+            if(megaDebug) System.out.println("Converting 0x"+ UnicodeFormatter.byteToHex(msgData[i]));
             if (hrCountFinder == 6) { // HR is the sixth byte
-                // System.out.println("Converting 0x"+
-                // UnicodeFormatter.byteToHex(msgData[i]));
+            	if(megaDebug) System.out.println("Converting 0x"+ UnicodeFormatter.byteToHex(msgData[i]));
                 hr = unsignedByteToInt(aByte);
                 if (debug)
                     System.out.println("Heart Rate is: " + hr);
             }
-            // else
-            // System.out.println("o" + i + "=" + unsignedByteToInt(aByte));
+            else if(megaDebug) 
+                System.out.println("o" + i + "=" + unsignedByteToInt(aByte));
             hrCountFinder++;
         }
 
@@ -438,7 +436,7 @@ public class GoldenEmbedParserMain {
                 msgN++;
                 errorFlag = false;
                 totalTrans++;
-                // System.out.println("RX: [sync]");
+                if(megaDebug) System.out.println("RX: [sync]");
             } else if (msgN == 1) {
                 Byte aByte = new Byte(rxBuf[i]);
                 msgN++; // Size
@@ -460,9 +458,7 @@ public class GoldenEmbedParserMain {
                     // Handle Message
                     i = ANTrxMsg(rxBuf, i, size, gc);
                 } else {
-                    // System.out.println("CheckSum Mismatch 0x"+
-                    // UnicodeFormatter.byteToHex(rxBuf[size+i+1]) + "!=: 0x" +
-                    // UnicodeFormatter.byteToHex(checksum));
+                	if(megaDebug) System.out.println("CheckSum Mismatch 0x"+ UnicodeFormatter.byteToHex(rxBuf[size+i+1]) + "!=: 0x" + UnicodeFormatter.byteToHex(checksum));
                     msgN = 0;
                     inMsg = true;
                     if (errorFlag == false) {
@@ -491,8 +487,7 @@ public class GoldenEmbedParserMain {
         byte chksum = 0x0;
 
         for (int i = pos; i < length + 3 + pos; i++) {
-            // System.out.println("Checksum: 0x"+
-            // UnicodeFormatter.byteToHex(data[i]));
+        	if(megaDebug) System.out.println("Checksum: 0x"+ UnicodeFormatter.byteToHex(data[i]));
             chksum ^= data[i]; // +1 since skip prefix sync code, we already
             // counted it
         }

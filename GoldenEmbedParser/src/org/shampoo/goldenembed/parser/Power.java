@@ -8,8 +8,15 @@ public class Power
      private double p;
      private double t;
      private double r;
+     private double v; //SRM
      
-     public double getR() {
+     public double getV() {
+		return v;
+	}
+	public void setV(double v) {
+		this.v = v;
+	}
+	public double getR() {
           return r;
      }
      public void setR(double r) {
