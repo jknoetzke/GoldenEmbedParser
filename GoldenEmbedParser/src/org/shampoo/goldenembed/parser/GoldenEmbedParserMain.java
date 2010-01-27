@@ -181,7 +181,7 @@ public class GoldenEmbedParserMain {
                 i = ANTparseHRM(rxIN, i + 2, gc);
             else
                 i = ANTParsePower(rxIN, ++i, size, gc);
-            
+
             if(gc.getPrevsecs() != gc.getSecs())
             {
                 if(gc.getSecs() - gc.getPrevWattsecs() > 5)
@@ -390,7 +390,6 @@ public class GoldenEmbedParserMain {
                     System.out.println("Spike Found: pdiff: " + pdiff + " rdiff: " + rdiff + " tdiff: " + tdiff+ "\n");
                 totalSpikes++;
             }
-            
         } else
             i = setTimeStamp(msgData, i, gc, false);
 
@@ -426,7 +425,7 @@ public class GoldenEmbedParserMain {
 
         i = setTimeStamp(msgData, i, gc, true);
         gc.setHr(hr);
- 
+
         return --i; // For Loop will advance itself.
     }
 

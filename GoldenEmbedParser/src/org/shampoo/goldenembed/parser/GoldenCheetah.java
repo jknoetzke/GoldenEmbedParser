@@ -9,8 +9,8 @@ public class GoldenCheetah
      private int secs;
      private int prevsecs;
      private int prevWattsecs;
-     
-     
+
+
      public int getPrevWattsecs() {
 		return prevWattsecs;
 	}
