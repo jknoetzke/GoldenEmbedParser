@@ -492,6 +492,9 @@ public class GoldenEmbedParserMain {
 
         byte chksum = 0x0;
 
+        if(pos < 0)
+            return chksum;
+
         for (int i = pos; i < length + 3 + pos; i++) {
         	if(megaDebug) System.out.println("Checksum: 0x"+ UnicodeFormatter.byteToHex(data[i]));
             chksum ^= data[i]; // +1 since skip prefix sync code, we already
