@@ -126,16 +126,16 @@ public class GoldenEmbedParserMain {
         String strMonth = formatDate(date);
         date = cal.get(Calendar.DAY_OF_MONTH);
         String strDay = formatDate(date);
-        
+
         date = cal.get(Calendar.HOUR);
         String strHour = formatDate(date);
-        
+
         date = cal.get(Calendar.MINUTE);
         String strMin = formatDate(date);
-        
+
         date = cal.get(Calendar.SECOND);
         String strSec = formatDate(date);
-        
+
 
         File outFile = new File(parentDir + "/" + cal.get(Calendar.YEAR) + "_" + strMonth + "_" + strDay + "_"
                 + strHour + "_" + strMin + "_" + strSec + ".gc");
@@ -413,12 +413,12 @@ public class GoldenEmbedParserMain {
             aByte = msgData[i];
             if(megaDebug) System.out.println("Converting 0x"+ UnicodeFormatter.byteToHex(msgData[i]));
             if (hrCountFinder == 6) { // HR is the sixth byte
-            	if(megaDebug) System.out.println("Converting 0x"+ UnicodeFormatter.byteToHex(msgData[i]));
+                if(megaDebug) System.out.println("Converting 0x"+ UnicodeFormatter.byteToHex(msgData[i]));
                 hr = unsignedByteToInt(aByte);
                 if (debug)
                     System.out.println("Heart Rate is: " + hr);
             }
-            else if(megaDebug) 
+            else if(megaDebug)
                 System.out.println("o" + i + "=" + unsignedByteToInt(aByte));
             hrCountFinder++;
         }
@@ -464,7 +464,7 @@ public class GoldenEmbedParserMain {
                     // Handle Message
                     i = ANTrxMsg(rxBuf, i, size, gc);
                 } else {
-                	if(megaDebug) System.out.println("CheckSum Mismatch 0x"+ UnicodeFormatter.byteToHex(rxBuf[size+i+1]) + "!=: 0x" + UnicodeFormatter.byteToHex(checksum));
+                    if(megaDebug) System.out.println("CheckSum Mismatch 0x"+ UnicodeFormatter.byteToHex(rxBuf[size+i+1]) + "!=: 0x" + UnicodeFormatter.byteToHex(checksum));
                     msgN = 0;
                     inMsg = true;
                     if (errorFlag == false) {
@@ -496,7 +496,7 @@ public class GoldenEmbedParserMain {
             return chksum;
 
         for (int i = pos; i < length + 3 + pos; i++) {
-        	if(megaDebug) System.out.println("Checksum: 0x"+ UnicodeFormatter.byteToHex(data[i]));
+            if(megaDebug) System.out.println("Checksum: 0x"+ UnicodeFormatter.byteToHex(data[i]));
             chksum ^= data[i]; // +1 since skip prefix sync code, we already
             // counted it
         }
