@@ -51,6 +51,7 @@ public class GoldenEmbedParserMain {
     private static final String spacer2 = "        ";
 
     Power power;
+    SpeedCad speedCad;
 
     boolean debug = false;
     boolean megaDebug = false;
@@ -97,6 +98,7 @@ public class GoldenEmbedParserMain {
         // Load up the file
         File file = null;
         power = new Power();
+        speedCad = new SpeedCad();
         GoldenCheetah gc = new GoldenCheetah();
 
         if (args.length < 1) {
@@ -179,21 +181,31 @@ public class GoldenEmbedParserMain {
             int chan = aByte.intValue();
             if (chan == 0)
                 i = ANTparseHRM(rxIN, i + 2, gc);
-            else
+            else if(chan == 1)
                 i = ANTParsePower(rxIN, ++i, size, gc);
+            else if(chan == 2)
+                i = ANTParseSpeedCad(rxIN, ++i, size, gc);
 
             if(gc.getPrevsecs() != gc.getSecs())
             {
                 if(gc.getSecs() - gc.getPrevWattsecs() > 5)
                 {
                     gc.setWatts(0);
-                    gc.setCad(0);
+                    if(gc.getSecs() - gc.getPrevCadSecs() > 5)
+                        gc.setCad(0);
                 }
+                if(gc.getSecs() - gc.getPrevCadSecs() > 5)
+                    gc.setCad(0);
+
+                if(gc.getSecs () - gc.getPrevSpeedSecs() > 5)
+                    gc.setSpeed(0);
+
                 writeGCRecord(gc);
                 gc.setPrevsecs(gc.getSecs());
 
             }
             break;
+
         case MESG_CHANNEL_ID_ID:
             if (debug)
                 System.out.println("ID: MESG_CHANNEL_ID_ID\n");
@@ -283,6 +295,133 @@ public class GoldenEmbedParserMain {
         is.close();
         if(megaDebug) System.out.println("Total Bytes: " + bytes.length);
         return bytes;
+    }
+    private int ANTParseSpeedCad(byte[] msgData, int i, int size, GoldenCheetah gc)
+    {
+
+        int crankrev = 0;
+        int cranktime = 0;
+        int wheelrev = 0;
+        int wheeltime = 0;
+
+
+        //for(int x = i; x < (x + i + 6); x++)
+        //    System.out.print("0x" + UnicodeFormatter.byteToHex(msgData[x]) + " ");
+
+        //System.out.println();
+        byte[] byteArray = new byte[2];
+        byteArray[1] = msgData[i++];
+        byteArray[0] = msgData[i++];
+        cranktime = byteArrayToInt(byteArray, 0, 2);
+
+        byteArray[1] = msgData[i++];
+        byteArray[0] = msgData[i++];
+        crankrev = byteArrayToInt(byteArray, 0, 2);
+
+        byteArray[1] = msgData[i++];
+        byteArray[0] = msgData[i++];
+        wheeltime = byteArrayToInt(byteArray, 0, 2);
+
+        byteArray[1] = msgData[i++];
+        byteArray[0] = msgData[i++];
+        wheelrev = byteArrayToInt(byteArray, 0, 2);
+
+        boolean timeStampRead = false;
+
+        if(speedCad.getCrankrev() != crankrev)
+        {
+            if(!speedCad.isFirst12Cad())
+            {
+                double crankTimeDelta = Math.abs(cranktime - speedCad.getCranktime());
+                if (crankTimeDelta > 60000)
+                    crankTimeDelta = Math.abs(cranktime - (speedCad.getCranktime() + 65536));
+
+                double crankRevDelta = Math.abs(crankrev - speedCad.getCrankrev());
+                if (crankRevDelta > 60000)
+                    crankRevDelta = Math.abs(crankrev - (speedCad.getCrankrev() + 65536));
+
+                double cad = 1024.0*60.0/(crankTimeDelta / crankRevDelta);
+                if(debug)System.out.println("cadence: " + cad);
+                cad = Math.round(cad);
+                gc.setCad(Math.round(cad));
+                i = setTimeStamp(msgData, ++i, gc, true);
+                timeStampRead = true;
+                gc.setPrevCadSecs(gc.getSecs());
+
+                speedCad.setCrankrev(crankrev);
+                speedCad.setCranktime(cranktime);
+
+            } else
+            {
+                speedCad.setCrankrev(crankrev);
+                speedCad.setCranktime(cranktime);
+                speedCad.setFirst12Cad(false);
+                i = setTimeStamp(msgData, ++i, gc, false);
+                timeStampRead = true;
+            }
+        }
+
+        if(speedCad.getWheelrev() != wheelrev)
+        {
+            if(!speedCad.isFirst12Speed())
+            {
+
+                if(megaDebug) System.out.println("WheelTime: " + wheeltime);
+                if(megaDebug) System.out.println("LastWheelTime: " + speedCad.getWheeltime());
+                double wheelTimeDelta = Math.abs(wheeltime - speedCad.getWheeltime());
+
+                if(megaDebug) System.out.println("WheelTimeDelta: " + wheelTimeDelta);
+                if (wheelTimeDelta > 60000)
+                    wheelTimeDelta = Math.abs(wheeltime - (speedCad.getWheeltime() + 65536));
+
+                if(megaDebug) System.out.println("wheelrev: " + wheeltime);
+                if(megaDebug) System.out.println("LastWheelRev: " + speedCad.getWheelrev());
+
+                double wheelRevDelta = Math.abs(wheelrev - speedCad.getWheelrev());
+                if (wheelRevDelta > 60000)
+                    wheelRevDelta = Math.abs(wheelrev - (speedCad.getWheelrev() + 65536));
+                if(megaDebug) System.out.println("wheelRevDelta: " + wheelRevDelta);
+
+                double rpm = 1024.0*60.0/wheelTimeDelta/wheelRevDelta;
+                double speed = 60.0*1024.0*60.0*speedCad.wheelCirc/1000/1000/(wheelTimeDelta/wheelRevDelta);
+
+                if(debug)System.out.println("rpm: " + rpm);
+                if(debug)System.out.println("Speed: " + speed);
+                if(!timeStampRead)
+                {
+                    i = setTimeStamp(msgData, ++i, gc, true);
+                    timeStampRead = true;
+                }
+                if(speedCad.getStartTime() == 0)
+                	speedCad.setStartTime(gc.getSecs());
+
+                gc.setSpeed(speed);
+                speedCad.setTotalSpeed(speedCad.getTotalSpeed() + speed);
+                gc.setDistance(speedCad.getTotalSpeed() / (gc.getSecs()*60.0));
+                if(debug)System.out.println("Distance: " + gc.getDistance());
+                gc.setPrevSpeedSecs(gc.getSecs());
+
+                speedCad.setWheelrev(wheelrev);
+                speedCad.setWheeltime(wheeltime);
+            }
+            else
+            {
+                if(!timeStampRead)
+                {
+                    i = setTimeStamp(msgData, ++i, gc, false);
+                    timeStampRead = true;
+                }
+                speedCad.setWheelrev(wheelrev);
+                speedCad.setWheeltime(wheeltime);
+                speedCad.setFirst12Speed(false);
+            }
+        }
+
+        if(!timeStampRead)
+            i = setTimeStamp(msgData, ++i, gc, false);
+
+        return --i; // For Loop will advance itself.
+
     }
 
     public int ANTParsePower(byte[] msgData, int i, int size, GoldenCheetah gc) {
@@ -571,8 +710,16 @@ public class GoldenEmbedParserMain {
     }
 
     private void writeGCRecord(GoldenCheetah gc) {
-        fout.write(spacer1 + "<sample cad=\"" + gc.getCad() + "\" watts=\"" + gc.getWatts() + "\" secs=\""
+        fout.write(spacer1 + "<sample cad=\"" + gc.getCad() + "\" watts=\"" + gc.getWatts() + "\" kph=\"" + Round(gc.getSpeed(),1) + "\" km=\"" + Round(gc.getDistance(),2) + "\" secs=\""
                 + gc.getSecs() + "\" hr=\"" + gc.getHr() + "\" len=\"1\"/>\n");
+    }
+
+    public static double Round(double Rval, int Rpl)
+    {
+    	  double p = (double)Math.pow(10,Rpl);
+    	  Rval = Rval * p;
+    	  double tmp = Math.round(Rval);
+    	  return (double)tmp/p;
     }
 
 }
