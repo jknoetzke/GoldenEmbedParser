@@ -392,8 +392,6 @@ public class GoldenEmbedParserMain {
                     i = setTimeStamp(msgData, ++i, gc, true);
                     timeStampRead = true;
                 }
-                if(speedCad.getStartTime() == 0)
-                	speedCad.setStartTime(gc.getSecs());
 
                 gc.setSpeed(speed);
                 speedCad.setTotalSpeed(speedCad.getTotalSpeed() + speed);
