@@ -27,8 +27,6 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.util.Calendar;
 
-import unsigned.uShort;
-
 public class GoldenEmbedParserMain {
 
     static final byte MESG_RESPONSE_EVENT_ID = 0x40;
