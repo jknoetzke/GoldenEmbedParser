@@ -27,6 +27,8 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.util.Calendar;
 
+import unsigned.uShort;
+
 public class GoldenEmbedParserMain {
 
     static final byte MESG_RESPONSE_EVENT_ID = 0x40;
@@ -332,14 +334,8 @@ public class GoldenEmbedParserMain {
         {
             if(!speedCad.isFirst12Cad())
             {
-                double crankTimeDelta = Math.abs(cranktime - speedCad.getCranktime());
-                if (crankTimeDelta > 60000)
-                    crankTimeDelta = Math.abs(cranktime - (speedCad.getCranktime() + 65536));
-
-                double crankRevDelta = Math.abs(crankrev - speedCad.getCrankrev());
-                if (crankRevDelta > 60000)
-                    crankRevDelta = Math.abs(crankrev - (speedCad.getCrankrev() + 65536));
-
+                double crankTimeDelta = (65536 + cranktime - speedCad.getCranktime()) % 65536;
+                double crankRevDelta = (65536 + crankrev - speedCad.getCrankrev()) % 65536;
                 double cad = 1024.0*60.0/(crankTimeDelta / crankRevDelta);
                 if(debug)System.out.println("cadence: " + cad);
                 cad = Math.round(cad);
@@ -371,15 +367,13 @@ public class GoldenEmbedParserMain {
                 double wheelTimeDelta = Math.abs(wheeltime - speedCad.getWheeltime());
 
                 if(megaDebug) System.out.println("WheelTimeDelta: " + wheelTimeDelta);
-                if (wheelTimeDelta > 60000)
-                    wheelTimeDelta = Math.abs(wheeltime - (speedCad.getWheeltime() + 65536));
+                wheelTimeDelta = (65536 + wheeltime - speedCad.getWheeltime()) % 65536;
 
                 if(megaDebug) System.out.println("wheelrev: " + wheeltime);
                 if(megaDebug) System.out.println("LastWheelRev: " + speedCad.getWheelrev());
 
                 double wheelRevDelta = Math.abs(wheelrev - speedCad.getWheelrev());
-                if (wheelRevDelta > 60000)
-                    wheelRevDelta = Math.abs(wheelrev - (speedCad.getWheelrev() + 65536));
+                wheelRevDelta = (65536 + wheelrev - speedCad.getWheelrev() % 65536);
                 if(megaDebug) System.out.println("wheelRevDelta: " + wheelRevDelta);
 
                 double rpm = 1024.0*60.0/wheelTimeDelta/wheelRevDelta;
@@ -696,12 +690,8 @@ public class GoldenEmbedParserMain {
     }
 
     public static int byteArrayToInt(byte[] b, int offset, int size) {
-        int value = 0;
-        for (int i = 0; i < size; i++) {
-            int shift = (size - 1 - i) * 8;
-            value += (b[i + offset] & 0x000000FF) << shift;
-        }
-        return value;
+    	uShort uint = new uShort(b, offset);
+    	return uint.getValue();
     }
 
     private void writeGCRecord(GoldenCheetah gc) {
