@@ -394,11 +394,13 @@ public class GoldenEmbedParserMain {
                 }
 
                 gc.setSpeed(speed);
-                speedCad.setTotalSpeed(speedCad.getTotalSpeed() + speed);
-                gc.setDistance(speedCad.getTotalSpeed() / (gc.getSecs()*60.0));
-                if(debug)System.out.println("Distance: " + gc.getDistance());
-                gc.setPrevSpeedSecs(gc.getSecs());
-
+                if(gc.getPrevSpeedSecs() != gc.getSecs())
+                {
+                    speedCad.setTotalSpeed(speedCad.getTotalSpeed() + speed);
+                    gc.setDistance(speedCad.getTotalSpeed() / (gc.getSecs()*60.0));
+                    if(debug)System.out.println("Distance: " + gc.getDistance());
+                    gc.setPrevSpeedSecs(gc.getSecs());
+                }
                 speedCad.setWheelrev(wheelrev);
                 speedCad.setWheeltime(wheeltime);
             }
@@ -455,9 +457,7 @@ public class GoldenEmbedParserMain {
                     // We can calculate and then store
                     aByte = new Byte(msgData[i]);
                     r1 = aByte.intValue();
-                    rdiff = power.getR() - r1;
-                    if (rdiff > 250)
-                        rdiff = power.getR() - (r1 + 255);
+                    rdiff = (r1 + 255 - power.getR()) % 255;
                     power.setR(aByte.intValue());
                     if(megaDebug) System.out.println("rdiff is: " + rdiff);
                 }
@@ -476,9 +476,7 @@ public class GoldenEmbedParserMain {
                     power.setP(p1);
                     if(megaDebug) System.out.println("P1: " + p1);
                 } else {
-                    pdiff = power.getP() - p1;
-                    if (pdiff > 60000)
-                        pdiff = power.getP() - (p1 + 65536);
+                    pdiff = (65536 + p1 - power.getP()) % 65536;
                     power.setP(p1);
                     if(megaDebug) System.out.println("pdiff is: " + pdiff);
                 }
@@ -497,9 +495,7 @@ public class GoldenEmbedParserMain {
                     power.setT(t1);
                     if(megaDebug) System.out.println("T: " + t1);
                 } else {
-                    tdiff = power.getT() - t1;
-                    if (tdiff > 60000)
-                        tdiff = power.getT() - (t1 + 65536);
+                    tdiff = (t1 + 65536 - power.getT()) % 65536;
                     power.setT(t1);
                     if(megaDebug) System.out.println("tdiff is: " + tdiff);
                 }
@@ -509,8 +505,8 @@ public class GoldenEmbedParserMain {
             }
         }
         if (tdiff != 0 && rdiff != 0) {
-            nm = (float) Math.abs(tdiff) / (float) (Math.abs(rdiff) * 32.0);
-            rpm = (double) Math.abs(rdiff) * 122880.0 / (double) Math.abs(pdiff);
+            nm = (float)tdiff / ((float)rdiff * 32.0);
+            rpm = (double)rdiff * 122880.0 / (double)pdiff;
             watts = rpm * nm * 2 * PI / 60;
 
             if (debug)
@@ -521,6 +517,7 @@ public class GoldenEmbedParserMain {
                 gc.setCad((int) rpm);
                 gc.setWatts((int) watts);
                 gc.setPrevWattsecs(gc.getSecs());
+                gc.setPrevCadSecs(gc.getSecs());
 
             } else {
                 if (debug)
