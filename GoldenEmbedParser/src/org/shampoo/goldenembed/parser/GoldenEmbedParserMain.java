@@ -334,7 +334,8 @@ public class GoldenEmbedParserMain {
             {
                 double crankTimeDelta = (65536 + cranktime - speedCad.getCranktime()) % 65536;
                 double crankRevDelta = (65536 + crankrev - speedCad.getCrankrev()) % 65536;
-                double cad = 1024.0*60.0/(crankTimeDelta / crankRevDelta);
+                double cad = 1024.0*60.0*crankRevDelta/crankTimeDelta;
+
                 if(debug)System.out.println("cadence: " + cad);
                 cad = Math.round(cad);
                 gc.setCad(Math.round(cad));
@@ -367,15 +368,15 @@ public class GoldenEmbedParserMain {
                 if(megaDebug) System.out.println("WheelTimeDelta: " + wheelTimeDelta);
                 wheelTimeDelta = (65536 + wheeltime - speedCad.getWheeltime()) % 65536;
 
-                if(megaDebug) System.out.println("wheelrev: " + wheeltime);
+                if(megaDebug) System.out.println("wheelrev: " + wheelrev);
                 if(megaDebug) System.out.println("LastWheelRev: " + speedCad.getWheelrev());
 
                 double wheelRevDelta = Math.abs(wheelrev - speedCad.getWheelrev());
-                wheelRevDelta = (65536 + wheelrev - speedCad.getWheelrev() % 65536);
+                wheelRevDelta = (65536 + wheelrev - speedCad.getWheelrev()) % 65536;
                 if(megaDebug) System.out.println("wheelRevDelta: " + wheelRevDelta);
 
-                double rpm = 1024.0*60.0/wheelTimeDelta/wheelRevDelta;
-                double speed = 60.0*1024.0*60.0*speedCad.wheelCirc/1000/1000/(wheelTimeDelta/wheelRevDelta);
+                double rpm = 1024.0*60.0*wheelRevDelta/wheelTimeDelta;
+                double speed = 60.0*1024.0*60.0*speedCad.wheelCirc*wheelRevDelta/1000/1000/wheelTimeDelta;
 
                 if(debug)System.out.println("rpm: " + rpm);
                 if(debug)System.out.println("Speed: " + speed);
@@ -388,8 +389,7 @@ public class GoldenEmbedParserMain {
                 gc.setSpeed(speed);
                 if(gc.getPrevSpeedSecs() != gc.getSecs())
                 {
-                    speedCad.setTotalSpeed(speedCad.getTotalSpeed() + speed);
-                    gc.setDistance(speedCad.getTotalSpeed() / (gc.getSecs()*60.0));
+                    gc.setDistance(gc.getDistance() + (speed * (gc.getSecs() - gc.getPrevSpeedSecs()) / 3600.0));
                     if(debug)System.out.println("Distance: " + gc.getDistance());
                     gc.setPrevSpeedSecs(gc.getSecs());
                 }
