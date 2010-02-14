@@ -194,6 +194,10 @@ public class GoldenEmbedParserMain {
                     if(gc.getSecs() - gc.getPrevCadSecs() > 5)
                         gc.setCad(0);
                 }
+                gc.setWatts((int)Round(power.getWatts() / power.getTotalWattCounter(),0));
+                gc.setCad((int)Round(power.getRpm() / power.getTotalCadCounter(),0));
+                power.setTotalWattCounter(0);
+                power.setWatts(0);
                 if(gc.getSecs() - gc.getPrevCadSecs() > 5)
                     gc.setCad(0);
 
@@ -511,8 +515,12 @@ public class GoldenEmbedParserMain {
             i = setTimeStamp(msgData, i, gc, true);
 
             if (rpm < 10000 && watts < 10000) {
-                gc.setCad((int) rpm);
-                gc.setWatts((int) watts);
+                power.setRpm(power.getRpm() + rpm);
+                power.setWatts(power.getWatts() + watts);
+                double wattCounter = power.getTotalWattCounter();
+                double cadCounter = power.getTotalCadCounter();
+                power.setTotalWattCounter(wattCounter + 1);
+                power.setTotalCadCounter(cadCounter + 1);
                 gc.setPrevWattsecs(gc.getSecs());
                 gc.setPrevCadSecs(gc.getSecs());
 

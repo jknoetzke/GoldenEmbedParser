@@ -1,6 +1,6 @@
 package org.shampoo.goldenembed.parser;
 
-public class Power 
+public class Power
 {
      private double watts;
      private double nm;
@@ -9,9 +9,23 @@ public class Power
      private double t;
      private double r;
      private double v; //SRM
-     
-     public double getV() {
+     private double totalWattCounter;
+     private double totalCadCounter;
+
+    public double getTotalCadCounter() {
+		return totalCadCounter;
+	}
+	public void setTotalCadCounter(double totalCadCounter) {
+		this.totalCadCounter = totalCadCounter;
+	}
+	public double getV() {
 		return v;
+	}
+	public double getTotalWattCounter() {
+		return totalWattCounter;
+	}
+	public void setTotalWattCounter(double totalWattCounter) {
+		this.totalWattCounter = totalWattCounter;
 	}
 	public void setV(double v) {
 		this.v = v;
@@ -59,7 +73,7 @@ public class Power
      public void setFirst12(boolean first12) {
           this.first12 = first12;
      }
-     
-     
+
+
 
 }
