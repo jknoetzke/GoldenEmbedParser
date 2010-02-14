@@ -94,7 +94,7 @@ public class GoldenEmbedParserMain {
 
     }
 
-    public GoldenEmbedParserMain(String[] args) {
+;    public GoldenEmbedParserMain(String[] args) {
         // Load up the file
         File file = null;
         power = new Power();
@@ -223,9 +223,13 @@ public class GoldenEmbedParserMain {
 
         pos += 2;
         devNo[0] = msgIN[pos];
+        if (megaDebug)
+            System.out.println("Device Type is: 0x" + UnicodeFormatter.byteToHex(msgIN[pos]));
 
         pos--;
         devNo[1] = msgIN[pos];
+        if (megaDebug)
+            System.out.println("Device Type is: 0x" + UnicodeFormatter.byteToHex(msgIN[pos]));
 
         int deviceNum = byteArrayToInt(devNo, 0, 2);
         if (debug)
@@ -234,8 +238,9 @@ public class GoldenEmbedParserMain {
         pos += 2;
         if (debug)
             System.out.println("Device Type is: 0x" + UnicodeFormatter.byteToHex(msgIN[pos]));
+        pos++;
         if (debug)
-            System.out.println("Man ID is: 0x" + UnicodeFormatter.byteToHex(msgIN[++pos]) + "\n");
+            System.out.println("Man ID is: 0x" + UnicodeFormatter.byteToHex(msgIN[pos]) + "\n");
 
         pos += 2;
         pos = setTimeStamp(msgIN, pos, gc, false);
@@ -561,8 +566,10 @@ public class GoldenEmbedParserMain {
         int size = 0;
         boolean inMsg = true;
 
+
         for (i = 0; i < rxBuf.length; i++) {
-            if (rxBuf[i] == MESG_TX_SYNC && inMsg) {
+
+        	if (rxBuf[i] == MESG_TX_SYNC && inMsg) {
                 inMsg = false;
                 msgN = 0; // Always reset msg count if we get a sync
                 msgN++;
