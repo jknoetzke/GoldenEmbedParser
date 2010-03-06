@@ -40,12 +40,14 @@ public class GoldenEmbedParserMain {
     static final byte MESG_OPEN_CHANNEL_ID = (byte) 0x4B;
     static final byte MESG_CHANNEL_ID_ID = (byte) 0x51;
     static final byte MESG_NETWORK_KEY_ID = 0x46;
+    static final byte MESG_CHANNEL_EVENT_ERROR = 0x01;
     static final double PI = 3.14159265;
 
     float totalTrans = 0;
     float totalErrors = 0;
     boolean errorFlag = false;
     long totalSpikes = 0;
+    boolean isGSC = false;
 
     private static final String spacer1 = "    ";
     private static final String spacer2 = "        ";
@@ -109,7 +111,8 @@ public class GoldenEmbedParserMain {
         else
             file = new File(args[0]);
 
-        if (args.length == 2) {
+        if (args.length >= 2) 
+        {
             if (args[1].equals("-d"))
                 debug = true;
             else if(args[1].equals("-dd"))
@@ -117,7 +120,9 @@ public class GoldenEmbedParserMain {
                debug = true;
                megaDebug = true;
             }
-        }
+            if(args[1].equalsIgnoreCase("-nogsc") || (args[2].equalsIgnoreCase("-nogsc")))
+            	isGSC = true;
+        }    
 
         String parentDir = file.getParent();
 
@@ -347,10 +352,13 @@ public class GoldenEmbedParserMain {
 
                 if(debug)System.out.println("cadence: " + cad);
                 cad = Math.round(cad);
-                gc.setCad(Math.round(cad));
                 i = setTimeStamp(msgData, ++i, gc, true);
                 timeStampRead = true;
-                gc.setPrevCadSecs(gc.getSecs());
+                if(!isGSC)
+                {
+                    gc.setPrevCadSecs(gc.getSecs());
+                    gc.setCad(Math.round(cad));
+                }
 
                 speedCad.setCrankrev(crankrev);
                 speedCad.setCranktime(cranktime);
@@ -652,11 +660,11 @@ public class GoldenEmbedParserMain {
         byte code = rxBuf[2 + pos];
 
         if (debug)
+        {
             System.out.println("Channel Num:" + UnicodeFormatter.byteToHex(ch));
-        if (debug)
             System.out.println("Message ID: " + UnicodeFormatter.byteToHex(id));
-        if (debug)
             System.out.println("Code: " + UnicodeFormatter.byteToHex(code));
+        }
 
         switch (id) {
         case MESG_CHANNEL_SEARCH_TIMEOUT_ID:
@@ -687,6 +695,17 @@ public class GoldenEmbedParserMain {
             if (debug)
                 System.out.println("[MESG_NETWORK_KEY_ID]");
             break;
+        case MESG_CHANNEL_EVENT_ERROR:
+        	if(code == 0x01)
+        	{
+        		if(ch == 0)
+        	     System.out.println("Dropped HRM");
+        		else if(ch == 1)
+        			System.out.println("Dropped Power");
+        		else if(ch == 2)
+        			System.out.println("Dropped Cadence/Speed");
+        	}
+        	break;
         default:
             if (debug)
                 System.out.println("[unknown]: " + UnicodeFormatter.byteToHex(id));
