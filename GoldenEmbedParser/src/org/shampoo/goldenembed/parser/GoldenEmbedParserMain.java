@@ -104,25 +104,29 @@ public class GoldenEmbedParserMain {
         GoldenCheetah gc = new GoldenCheetah();
 
         if (args.length < 1) {
-            System.out.println("Missing Input File");
+            System.out.println("Usage: java -jar GoldenEmbedParser.jar GE_Input_file [-gsc] [-d|-dd]");
+            System.out.println("       where -gsc = Garmin GSC10 data, -d = Debug, -dd = Mega Debug");
             System.exit(1);
         }
 
         else
             file = new File(args[0]);
 
-        if (args.length >= 2) 
+        if (args.length > 1)
         {
-            if (args[1].equals("-d"))
-                debug = true;
-            else if(args[1].equals("-dd"))
-            {
-               debug = true;
-               megaDebug = true;
+                for(int i=1; i<(args.length); i++)
+                {
+                if(args[i].equalsIgnoreCase("-gsc"))
+                    isGSC = true;
+                if (args[i].equals("-d"))
+                    debug = true;
+                if(args[i].equals("-dd"))
+                {
+                    debug = true;
+                    megaDebug = true;
+                }
             }
-            if(args[1].equalsIgnoreCase("-nogsc") || (args[2].equalsIgnoreCase("-nogsc")))
-            	isGSC = true;
-        }    
+        }
 
         String parentDir = file.getParent();
 
