@@ -13,6 +13,7 @@ public class GoldenCheetah
      private int prevCadSecs;
      private double distance;
      private double speed;
+     public boolean newWatts = false;
 
      public double getDistance() {
 		return distance;

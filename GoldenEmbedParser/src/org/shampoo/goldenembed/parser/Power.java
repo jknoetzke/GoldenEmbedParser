@@ -12,7 +12,7 @@ public class Power
      private double totalWattCounter;
      private double totalCadCounter;
      public boolean first12 = false;
-
+ 
      public boolean isFirst12() {
 		return first12;
 	}

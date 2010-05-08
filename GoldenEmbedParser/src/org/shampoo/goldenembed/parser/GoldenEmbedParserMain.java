@@ -209,8 +209,6 @@ public class GoldenEmbedParserMain {
                 	    gc.setCad((int)Round(power.getRpm() / power.getTotalCadCounter(),0));
                  }
 
-                //power.setTotalWattCounter(0);
-                //power.setWatts(0);
                 if(gc.getSecs() - gc.getPrevCadSecs() > 5)
                     gc.setCad(0);
 
@@ -219,9 +217,7 @@ public class GoldenEmbedParserMain {
 
                 writeGCRecord(gc);
                 gc.setPrevsecs(gc.getSecs());
-                //gc.setWatts(0);
-                //gc.setCad(0);
-                //gc.setSpeed(0);
+                gc.newWatts = false;
             }
             break;
 
@@ -536,6 +532,14 @@ public class GoldenEmbedParserMain {
         			i = setTimeStamp(msgData, ++i, gc, true);
 
                     if (rpm < 10000 && watts < 10000) {
+                        if(gc.newWatts == false)
+                        {
+                            power.setTotalWattCounter(0);
+                            power.setTotalCadCounter(0);
+                            power.setRpm(0);
+                            power.setWatts(0);
+                            gc.newWatts = true;
+                        }
                     	gc.setPrevCadSecs(gc.getSecs());
                         gc.setCad(pr1);
                         power.setRpm(power.getRpm() + rpm);
@@ -546,7 +550,6 @@ public class GoldenEmbedParserMain {
                         power.setTotalCadCounter(cadCounter + 1);
                         gc.setPrevWattsecs(gc.getSecs());
                         gc.setPrevCadSecs(gc.getSecs());
-
                     } else {
                         if (debug)
                             System.out.println("Spike Found: cdiff: " + cdiff + " rdiff: " + rdiff + " tdiff: " + tdiff+ "\n");
@@ -661,7 +664,7 @@ public class GoldenEmbedParserMain {
                 power.setTotalCadCounter(cadCounter + 1);
                 gc.setPrevWattsecs(gc.getSecs());
                 gc.setPrevCadSecs(gc.getSecs());
-
+                
             } else {
                 if (debug)
                     System.out.println("Spike Found: pdiff: " + pdiff + " rdiff: " + rdiff + " tdiff: " + tdiff+ "\n");
