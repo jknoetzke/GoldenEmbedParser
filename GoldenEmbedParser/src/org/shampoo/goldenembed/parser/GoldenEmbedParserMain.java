@@ -96,7 +96,7 @@ public class GoldenEmbedParserMain {
 
     }
 
-;    public GoldenEmbedParserMain(String[] args) {
+    public GoldenEmbedParserMain(String[] args) {
         // Load up the file
         File file = null;
         power = new Power();
