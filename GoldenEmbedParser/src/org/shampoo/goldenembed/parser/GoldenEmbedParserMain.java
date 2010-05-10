@@ -206,15 +206,15 @@ public class GoldenEmbedParserMain {
                     gc.setWatts((int)Round(power.getWatts() / power.getTotalWattCounter(),0));
                 	gc.setCad((int)Round(power.getRpm() / power.getTotalCadCounter(),0));
                 }
-                
+
                 if (!isGSC) {
             	    if (!power.first0x12)
             	        gc.setCad((int)Round(power.getRpm() / power.getTotalCadCounter(),0));
-                 }
-                if(gc.getSecs() - gc.getPrevCadSecs() > 5)
+                }
+                if(gc.getSecs() - gc.getPrevCadSecs() >= 5)
                     gc.setCad(0);
 
-                if(gc.getSecs () - gc.getPrevSpeedSecs() > 5)
+                if(gc.getSecs () - gc.getPrevSpeedSecs() >= 5)
                     gc.setSpeed(0);
 
                 writeGCRecord(gc);
@@ -459,17 +459,17 @@ public class GoldenEmbedParserMain {
         	i = i+2;
         	return i + size;
         }
-    }    
+    }
 
     public int ANTParsePower0x11(byte[] msgData, int i, int size, GoldenCheetah gc) {
     	// For parsing ANT+ 0x11 messages
     	// Counter (u8) Unknown (u8) Cadence (u8) Wheel_RPM_Counter (u16) Torque_Counter (u16)
     	// Cnt_diff = (Last Counter - Current Counter + 256) mod 256
     	// Torque_diff = (Last Torque - Current Torque + 65536) mod 65536
-    	// NM = Torque_diff / 32 / Cnt_diff 
+    	// NM = Torque_diff / 32 / Cnt_diff
     	// Wheel_RPM_diff = (Last Wheel RPM - Current Wheel_RPM + 65536) mod 65536
     	// Power = 122880 * Cnt_diff / Wheel_RPM_diff
-    	
+
     	int c1, c2, pr1, t1, r1;
 
     	double cdiff = 0;
@@ -478,53 +478,53 @@ public class GoldenEmbedParserMain {
         double nm = 0;
         double rpm = 0;
         double watts = 0;
-    	
+
         byte aByte;
         byte[] byteArray = new byte[2];
-        
+
         // 0x11 Message counter
         aByte = msgData[i++];
         c1 = unsignedByteToInt(aByte);
-        
+
         // Unknown counter
         aByte = msgData[i++];
         c2 = unsignedByteToInt(aByte);
-              
+
         // Pedal RPM (cadence) value
         aByte = msgData[i++];
         pr1 = unsignedByteToInt(aByte);
-        
+
         // Wheel RPM counter
         byteArray[1] = msgData[i++];
         byteArray[0] = msgData[i++];
         r1 = byteArrayToInt(byteArray, 0, 2);
-           
+
         // Torque counter
         byteArray[1] = msgData[i++];
         byteArray[0] = msgData[i++];
         t1 = byteArrayToInt(byteArray, 0, 2);
-          
+
         //System.out.println("c1: " + c1 + " c2: " + c2 + " pr1: " + pr1 + " t1: " + t1 + " r1: " + r1 + "\n");
-        
+
         if (power.first0x11) {
         	power.first0x11 = false;
         	power.setR(r1);
         	power.setT(t1);
         	power.setCnt(c1);
         	i = setTimeStamp(msgData, ++i, gc, false);
-        } 
-        else if (c1 != power.getCnt()) 
+        }
+        else if (c1 != power.getCnt())
         {
         		cdiff = (( 256 + c1 - power.getCnt()) % 256);
             	tdiff = ( 65536 + t1 - power.getT() ) % 65536;
         		rdiff = ( 65536 + r1 - power.getR() ) % 65536;
-        		
-        		if (tdiff != 0 && rdiff != 0) 
+
+        		if (tdiff != 0 && rdiff != 0)
         		{
         			nm = (float)tdiff / 32 / (float)cdiff;
         			rpm = 122880 * (float)cdiff / (float)rdiff;
         			watts = rpm * nm * 2 * PI / 60;
-        	        
+
         			if (debug) {
                         System.out.format("ANTParsePower0x11 cad: %3d  nm: %5.2f  rpm: %5.2f  watts: %6.1f", pr1, nm, rpm, watts);
                         System.out.println();
@@ -541,8 +541,7 @@ public class GoldenEmbedParserMain {
                             gc.newWatts = true;
                         }
                     	gc.setPrevCadSecs(gc.getSecs());
-                        gc.setCad(pr1);
-                        power.setRpm(power.getRpm() + rpm);
+                        power.setRpm(power.getRpm() + pr1);
                         power.setWatts(power.getWatts() + watts);
                         double wattCounter = power.getTotalWattCounter();
                         double cadCounter = power.getTotalCadCounter();
@@ -555,7 +554,7 @@ public class GoldenEmbedParserMain {
                             System.out.println("Spike Found: cdiff: " + cdiff + " rdiff: " + rdiff + " tdiff: " + tdiff+ "\n");
                         totalSpikes++;
                     }
-              } 
+              }
         	  else
                   i = setTimeStamp(msgData, ++i, gc, false);
         }
@@ -565,10 +564,10 @@ public class GoldenEmbedParserMain {
         power.setR(r1);
     	power.setT(t1);
     	power.setCnt(c1);
-    	
+
         return --i; // For Loop will advance itself.
     }
-    
+
     public int ANTParsePower0x12(byte[] msgData, int i, int size, GoldenCheetah gc) {
         int t1;
         int p1;
@@ -664,7 +663,7 @@ public class GoldenEmbedParserMain {
                     power.setWatts(0);
                     gc.newWatts = true;
                 }
- 
+
             	power.setRpm(power.getRpm() + rpm);
                 power.setWatts(power.getWatts() + watts);
                 double wattCounter = power.getTotalWattCounter();
@@ -673,7 +672,7 @@ public class GoldenEmbedParserMain {
                 power.setTotalCadCounter(cadCounter + 1);
                 gc.setPrevWattsecs(gc.getSecs());
                 gc.setPrevCadSecs(gc.getSecs());
-                
+
             } else {
                 if (debug)
                     System.out.println("Spike Found: pdiff: " + pdiff + " rdiff: " + rdiff + " tdiff: " + tdiff+ "\n");
@@ -723,8 +722,8 @@ public class GoldenEmbedParserMain {
         int i;
         int size = 0;
         boolean inMsg = true;
-        
-        for (i = 0; i < rxBuf.length; i++) 
+
+        for (i = 0; i < rxBuf.length; i++)
         {
         	if (rxBuf[i] == MESG_TX_SYNC && inMsg) {
                 inMsg = false;
@@ -867,10 +866,8 @@ public class GoldenEmbedParserMain {
     	return uint.getValue();
     }
 
-    private void writeGCRecord(GoldenCheetah gc) 
+    private void writeGCRecord(GoldenCheetah gc)
     {
-    	if(gc.getSecs() == 121)
-    		gc.setSecs(121);
         fout.write(spacer1 + "<sample cad=\"" + gc.getCad() + "\" watts=\"" + gc.getWatts() + "\" kph=\"" + Round(gc.getSpeed(),1) + "\" km=\"" + Round(gc.getDistance(),2) + "\" secs=\""
                 + gc.getSecs() + "\" hr=\"" + gc.getHr() + "\" len=\"1\"/>\n");
     }
