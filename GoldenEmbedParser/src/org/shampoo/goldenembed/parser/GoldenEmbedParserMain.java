@@ -197,18 +197,20 @@ public class GoldenEmbedParserMain {
 
             if(gc.getPrevsecs() != gc.getSecs())
             {
-                if(gc.getSecs() - gc.getPrevWattsecs() > 5)
+                if(gc.getSecs() - gc.getPrevWattsecs() >= 5)
                 {
                     gc.setWatts(0);
-                    if(gc.getSecs() - gc.getPrevCadSecs() > 5)
-                        gc.setCad(0);
                 }
-                gc.setWatts((int)Round(power.getWatts() / power.getTotalWattCounter(),0));
-                if (!isGSC) {
-                	if (!power.first0x12)
-                	    gc.setCad((int)Round(power.getRpm() / power.getTotalCadCounter(),0));
-                 }
-
+                else
+                {
+                    gc.setWatts((int)Round(power.getWatts() / power.getTotalWattCounter(),0));
+                    if (!isGSC) {
+                	    if (!power.first0x12)
+                	        gc.setCad((int)Round(power.getRpm() / power.getTotalCadCounter(),0));
+                     }
+                     else
+                	     gc.setCad((int)Round(power.getRpm() / power.getTotalCadCounter(),0));
+                }
                 if(gc.getSecs() - gc.getPrevCadSecs() > 5)
                     gc.setCad(0);
 
@@ -656,7 +658,16 @@ public class GoldenEmbedParserMain {
             i = setTimeStamp(msgData, i, gc, true);
 
             if (rpm < 10000 && watts < 10000) {
-                power.setRpm(power.getRpm() + rpm);
+                if(gc.newWatts == false)
+                {
+                    power.setTotalWattCounter(0);
+                    power.setTotalCadCounter(0);
+                    power.setRpm(0);
+                    power.setWatts(0);
+                    gc.newWatts = true;
+                }
+ 
+            	power.setRpm(power.getRpm() + rpm);
                 power.setWatts(power.getWatts() + watts);
                 double wattCounter = power.getTotalWattCounter();
                 double cadCounter = power.getTotalCadCounter();
@@ -860,6 +871,8 @@ public class GoldenEmbedParserMain {
 
     private void writeGCRecord(GoldenCheetah gc) 
     {
+    	if(gc.getSecs() == 121)
+    		gc.setSecs(121);
         fout.write(spacer1 + "<sample cad=\"" + gc.getCad() + "\" watts=\"" + gc.getWatts() + "\" kph=\"" + Round(gc.getSpeed(),1) + "\" km=\"" + Round(gc.getDistance(),2) + "\" secs=\""
                 + gc.getSecs() + "\" hr=\"" + gc.getHr() + "\" len=\"1\"/>\n");
     }
