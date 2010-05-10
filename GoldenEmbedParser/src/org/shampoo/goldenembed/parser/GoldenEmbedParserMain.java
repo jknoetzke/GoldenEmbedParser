@@ -204,13 +204,13 @@ public class GoldenEmbedParserMain {
                 else
                 {
                     gc.setWatts((int)Round(power.getWatts() / power.getTotalWattCounter(),0));
-                    if (!isGSC) {
-                	    if (!power.first0x12)
-                	        gc.setCad((int)Round(power.getRpm() / power.getTotalCadCounter(),0));
-                     }
-                     else
-                	     gc.setCad((int)Round(power.getRpm() / power.getTotalCadCounter(),0));
+                	gc.setCad((int)Round(power.getRpm() / power.getTotalCadCounter(),0));
                 }
+                
+                if (!isGSC) {
+            	    if (!power.first0x12)
+            	        gc.setCad((int)Round(power.getRpm() / power.getTotalCadCounter(),0));
+                 }
                 if(gc.getSecs() - gc.getPrevCadSecs() > 5)
                     gc.setCad(0);
 
@@ -470,11 +470,9 @@ public class GoldenEmbedParserMain {
     	// Wheel_RPM_diff = (Last Wheel RPM - Current Wheel_RPM + 65536) mod 65536
     	// Power = 122880 * Cnt_diff / Wheel_RPM_diff
     	
-    	int end = i + size;
     	int c1, c2, pr1, t1, r1;
 
     	double cdiff = 0;
-    	double prdiff = 0;
         double tdiff = 0;
         double rdiff = 0;
         double nm = 0;
