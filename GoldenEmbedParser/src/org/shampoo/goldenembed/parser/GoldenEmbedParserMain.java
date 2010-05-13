@@ -217,6 +217,9 @@ public class GoldenEmbedParserMain {
                 if(gc.getSecs () - gc.getPrevSpeedSecs() >= 5)
                     gc.setSpeed(0);
 
+                if(gc.getSecs () - gc.getPrevHRSecs() >= 5)
+                    gc.setHr(0);
+
                 writeGCRecord(gc);
                 gc.setPrevsecs(gc.getSecs());
                 gc.newWatts = false;
@@ -713,6 +716,7 @@ public class GoldenEmbedParserMain {
 
         i = setTimeStamp(msgData, i, gc, true);
         gc.setHr(hr);
+        gc.setPrevHRSecs(gc.getSecs());
 
         return --i; // For Loop will advance itself.
     }

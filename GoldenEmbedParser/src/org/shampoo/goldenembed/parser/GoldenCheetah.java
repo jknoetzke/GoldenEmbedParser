@@ -11,6 +11,7 @@ public class GoldenCheetah
      private int prevWattsecs;
      private int prevSpeedSecs;
      private int prevCadSecs;
+     private int prevHRSecs;
      private double distance;
      private double speed;
      public boolean newWatts = true;
@@ -84,6 +85,11 @@ public class GoldenCheetah
      public void setLen(int len) {
           this.len = len;
      }
-
+     public int getPrevHRSecs() {
+          return prevHRSecs;
+     }
+     public void setPrevHRSecs(int prevHRSecs) {
+          this.prevHRSecs = prevHRSecs;
+     }
 
 }
