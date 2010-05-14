@@ -11,8 +11,15 @@ public class Power
      private double v; //SRM
      private double totalWattCounter;
      private double totalCadCounter;
-
-    public double getTotalCadCounter() {
+     public boolean first12 = false;
+ 
+     public boolean isFirst12() {
+		return first12;
+	}
+	public void setFirst12(boolean first12) {
+		this.first12 = first12;
+	}
+	public double getTotalCadCounter() {
 		return totalCadCounter;
 	}
 	public void setTotalCadCounter(double totalCadCounter) {
@@ -36,7 +43,6 @@ public class Power
      public void setR(double r) {
           this.r = r;
      }
-     boolean first12 = true;
      public double getWatts() {
           return watts;
      }
@@ -67,13 +73,30 @@ public class Power
      public void setT(double t) {
           this.t = t;
      }
-     public boolean isFirst12() {
-          return first12;
+     
+     boolean first0x11 = true; // For 0x11 messages
+     public boolean isFirst0x11() {
+         return first0x11;
      }
-     public void setFirst12(boolean first12) {
-          this.first12 = first12;
+     public void setFirst0x11(boolean first0x11) {
+         this.first0x11 = first0x11;
+     }
+     
+     boolean first0x12 = true; // For 0x12 messages
+     public boolean isFirst0x12() {
+          return first0x12;
+     }
+     public void setFirst0x12(boolean first0x12) {
+          this.first0x12 = first0x12;
      }
 
+     private double cnt;
 
+     public double getCnt() {
+ 		return cnt;
+     }
+ 	 public void setCnt(double cnt) {
+ 		this.cnt = cnt;
+ 	 }
 
 }

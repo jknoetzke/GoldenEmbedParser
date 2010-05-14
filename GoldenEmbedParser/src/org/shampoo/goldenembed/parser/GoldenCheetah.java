@@ -13,9 +13,24 @@ public class GoldenCheetah
      private int prevCadSecs;
      private double distance;
      private double speed;
+     private String longitude;
+     private String latitude;
+     public boolean newWatts;
 
      public double getDistance() {
 		return distance;
+	}
+	public String getLongitude() {
+		return longitude;
+	}
+	public void setLongitude(String longitude) {
+		this.longitude = longitude;
+	}
+	public String getLatitude() {
+		return latitude;
+	}
+	public void setLatitude(String latitude) {
+		this.latitude = latitude;
 	}
 	public void setDistance(double distance) {
 		this.distance = distance;
@@ -83,6 +98,4 @@ public class GoldenCheetah
      public void setLen(int len) {
           this.len = len;
      }
-
-
 }
