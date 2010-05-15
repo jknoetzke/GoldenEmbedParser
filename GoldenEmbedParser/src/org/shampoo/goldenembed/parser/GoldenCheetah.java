@@ -17,36 +17,36 @@ public class GoldenCheetah
      public boolean newWatts = true;
 
      public double getDistance() {
-		return distance;
-	}
-	public void setDistance(double distance) {
-		this.distance = distance;
-	}
-	public int getPrevCadSecs() {
-        return prevCadSecs;
-    }
-    public void setPrevCadSecs(int prevCadSecs) {
-        this.prevCadSecs = prevCadSecs;
-    }
-    public int getPrevSpeedSecs() {
-        return prevSpeedSecs;
-    }
-    public void setPrevSpeedSecs(int prevSpeedSecs) {
-        this.prevSpeedSecs = prevSpeedSecs;
-    }
+          return distance;
+     }
+     public void setDistance(double distance) {
+          this.distance = distance;
+     }
+     public int getPrevCadSecs() {
+          return prevCadSecs;
+     }
+     public void setPrevCadSecs(int prevCadSecs) {
+          this.prevCadSecs = prevCadSecs;
+     }
+     public int getPrevSpeedSecs() {
+          return prevSpeedSecs;
+     }
+     public void setPrevSpeedSecs(int prevSpeedSecs) {
+          this.prevSpeedSecs = prevSpeedSecs;
+     }
      public double getSpeed() {
         return speed;
-    }
-    public void setSpeed(double speed) {
-        this.speed = speed;
-    }
-    public int getPrevWattsecs() {
-		return prevWattsecs;
-	}
-	public void setPrevWattsecs(int prevWattsecs) {
-		this.prevWattsecs = prevWattsecs;
-	}
-	public int getPrevsecs() {
+     }
+     public void setSpeed(double speed) {
+          this.speed = speed;
+     }
+     public int getPrevWattsecs() {
+          return prevWattsecs;
+     }
+     public void setPrevWattsecs(int prevWattsecs) {
+          this.prevWattsecs = prevWattsecs;
+     }
+     public int getPrevsecs() {
           return prevsecs;
      }
      public void setPrevsecs(int prevsecs) {
