@@ -204,7 +204,7 @@ public class GoldenEmbedParserMain {
                 else
                 {
                     gc.setWatts((int)Round(power.getWatts() / power.getTotalWattCounter(),0));
-                	gc.setCad((int)Round(power.getRpm() / power.getTotalCadCounter(),0));
+                    gc.setCad((int)Round(power.getRpm() / power.getTotalCadCounter(),0));
                 }
 
                 if (!isGSC) {
@@ -510,59 +510,59 @@ public class GoldenEmbedParserMain {
         //System.out.println("c1: " + c1 + " c2: " + c2 + " pr1: " + pr1 + " t1: " + t1 + " r1: " + r1 + "\n");
 
         if (power.first0x11) {
-        	power.first0x11 = false;
-        	power.setR(r1);
-        	power.setT(t1);
-        	power.setCnt(c1);
-        	i = setTimeStamp(msgData, ++i, gc, false);
+             power.first0x11 = false;
+             power.setR(r1);
+             power.setT(t1);
+             power.setCnt(c1);
+             i = setTimeStamp(msgData, ++i, gc, false);
         }
         else if (c1 != power.getCnt())
         {
-        		cdiff = (( 256 + c1 - power.getCnt()) % 256);
-            	tdiff = ( 65536 + t1 - power.getT() ) % 65536;
-        		rdiff = ( 65536 + r1 - power.getR() ) % 65536;
+             cdiff = (( 256 + c1 - power.getCnt()) % 256);
+             tdiff = ( 65536 + t1 - power.getT() ) % 65536;
+             rdiff = ( 65536 + r1 - power.getR() ) % 65536;
 
-        		if (tdiff != 0 && rdiff != 0)
-        		{
-        			nm = (float)tdiff / 32 / (float)cdiff;
-        			rpm = 122880 * (float)cdiff / (float)rdiff;
-        			watts = rpm * nm * 2 * PI / 60;
+             if (tdiff != 0 && rdiff != 0)
+             {
+                  nm = (float)tdiff / 32 / (float)cdiff;
+                  rpm = 122880 * (float)cdiff / (float)rdiff;
+                  watts = rpm * nm * 2 * PI / 60;
 
-        			if (debug) {
-                        System.out.format("ANTParsePower0x11 cad: %3d  nm: %5.2f  rpm: %5.2f  watts: %6.1f", pr1, nm, rpm, watts);
-                        System.out.println();
-        			}
-        			i = setTimeStamp(msgData, ++i, gc, true);
+                  if (debug) {
+                       System.out.format("ANTParsePower0x11 cad: %3d  nm: %5.2f  rpm: %5.2f  watts: %6.1f", pr1, nm, rpm, watts);
+                       System.out.println();
+                  }
+                  i = setTimeStamp(msgData, ++i, gc, true);
 
-                    if (rpm < 10000 && watts < 10000) {
-                        if(gc.newWatts == false)
-                        {
+                  if (rpm < 10000 && watts < 10000) {
+                       if(gc.newWatts == false)
+                       {
                             power.setTotalWattCounter(0);
                             power.setTotalCadCounter(0);
                             power.setRpm(0);
                             power.setWatts(0);
                             gc.newWatts = true;
-                        }
-                    	gc.setPrevCadSecs(gc.getSecs());
-                        power.setRpm(power.getRpm() + pr1);
-                        power.setWatts(power.getWatts() + watts);
-                        double wattCounter = power.getTotalWattCounter();
-                        double cadCounter = power.getTotalCadCounter();
-                        power.setTotalWattCounter(wattCounter + 1);
-                        power.setTotalCadCounter(cadCounter + 1);
-                        gc.setPrevWattsecs(gc.getSecs());
-                        gc.setPrevCadSecs(gc.getSecs());
-                    } else {
-                        if (debug)
+                       }
+                       gc.setPrevCadSecs(gc.getSecs());
+                       power.setRpm(power.getRpm() + pr1);
+                       power.setWatts(power.getWatts() + watts);
+                       double wattCounter = power.getTotalWattCounter();
+                       double cadCounter = power.getTotalCadCounter();
+                       power.setTotalWattCounter(wattCounter + 1);
+                       power.setTotalCadCounter(cadCounter + 1);
+                       gc.setPrevWattsecs(gc.getSecs());
+                       gc.setPrevCadSecs(gc.getSecs());
+                  } else {
+                       if (debug)
                             System.out.println("Spike Found: cdiff: " + cdiff + " rdiff: " + rdiff + " tdiff: " + tdiff+ "\n");
-                        totalSpikes++;
-                    }
-              }
+                       totalSpikes++;
+                  }
+             }
         	  else
                   i = setTimeStamp(msgData, ++i, gc, false);
         }
         else
-            i = setTimeStamp(msgData, ++i, gc, false);
+             i = setTimeStamp(msgData, ++i, gc, false);
 
         power.setR(r1);
     	power.setT(t1);
