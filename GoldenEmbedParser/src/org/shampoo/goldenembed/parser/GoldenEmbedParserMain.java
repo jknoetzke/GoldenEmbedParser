@@ -50,6 +50,7 @@ public class GoldenEmbedParserMain
     boolean errorFlag = false;
     long totalSpikes = 0;
     boolean noGSC = false;
+    int startTime = 0;
 
     private static final String spacer1 = "    ";
     private static final String spacer2 = "        ";
@@ -83,7 +84,7 @@ public class GoldenEmbedParserMain
         fout.write("<!DOCTYPE GoldenCheetah>\n");
         fout.write("<ride>\n");
         fout.write(spacer1 + "<attributes>\n");
-        fout.write(spacer2 + "<attribute key=\"Start time\" value=\""+year+"/"+ month +"/" + day+" " + hour+":" + minute + ":" + second + "UTC\" />\n");
+        fout.write(spacer2 + "<attribute key=\"Start time\" value=\""+year+"/"+ month +"/" + day+" " + hour+":" + minute + ":" + second + " UTC\" />\n");
         fout.write(spacer2 + "<attribute key=\"Device type\" value=\"Golden Embed GPS\" />\n");
         fout.write(spacer1 + "</attributes>\n");
         fout.write("<samples>\n");
@@ -788,10 +789,13 @@ public class GoldenEmbedParserMain
     {
     	if(gc.getSecs() != gc.getPrevsecs())
     	{
-            fout.write(spacer1 + "<sample cad=\"" + gc.getCad() + "\" watts=\"" + gc.getWatts() + "\" kph=\"" + Round(gc.getSpeed(),1) + "\" km=\"" + Round(gc.getDistance(),2) + "\" secs=\""
-                     + gc.getSecs() + "\" hr=\"" + gc.getHr() + "\" lon=\"" + gc.getLongitude() + "\" lat=\"" + gc.getLatitude() +"\" len=\"1\"/>\n");
+    		if(gc.getLatitude().length() != 0 && gc.getLongitude().length() != 0) //TODO Big Patch
+    		{
+                fout.write(spacer1 + "<sample cad=\"" + gc.getCad() + "\" watts=\"" + gc.getWatts() + "\" kph=\"" + Round(gc.getSpeed(),1) + "\" km=\"" + Round(gc.getDistance(),2) + "\" secs=\""
+                         + gc.getSecs() + "\" hr=\"" + gc.getHr() + "\" lon=\"" + gc.getLongitude() + "\" lat=\"" + gc.getLatitude() +"\" len=\"1\"/>\n");
             
-            gc.setPrevsecs(gc.getSecs());
+                gc.setPrevsecs(gc.getSecs());
+    		}
     	}
     }
 
@@ -812,9 +816,11 @@ public class GoldenEmbedParserMain
     {
     	byte[] bufToParse = new byte[256];
     	int bufPos = 0;
+    	int timeStampPos = 0;
         GPS gps = new GPS();
         byte[] bufToSend;
-        System.out.println("Position: " + pos);
+        byte[] timeStamp = new byte[6];
+        String strTimeStamp = new String();
         
         if(pos+bufPos >= readBytes.length)
         {
@@ -831,6 +837,19 @@ public class GoldenEmbedParserMain
         	bufToSend = new byte[size+5];
         	for(; bufPos < bufToSend.length; bufPos++)
 		        bufToParse[bufPos] = readBytes[bufPos+pos];
+
+        	pos += bufPos-1;
+
+        	for(; timeStampPos < timeStamp.length; timeStampPos++)
+		        timeStamp[timeStampPos] = readBytes[timeStampPos+pos];
+        	strTimeStamp = convertBytesToString(timeStamp);
+
+        	if(startTime == 0)
+        		startTime = parseTimeStamp(timeStamp.toString());
+        	
+        	gc.setSecs(parseTimeStamp(strTimeStamp) - startTime);
+        	
+        	pos += timeStampPos+1;
         }
         else
         {
@@ -840,13 +859,13 @@ public class GoldenEmbedParserMain
     		    bufPos++;
             }
             bufToSend = new byte[bufPos];
+            pos += bufPos;
+
         }
         
         for(int i=0; i < bufPos; i++)
             bufToSend[i] = bufToParse[i];
 
-        pos += bufPos;
-        
         if(bufToSend[0] == MESG_TX_SYNC) //It's ANT
         {
             ANTrxHandler(bufToSend, gc);
@@ -863,12 +882,6 @@ public class GoldenEmbedParserMain
             if(outFile == null)
                 initOutFile(gps, filePath);
             
-            int hour = Integer.parseInt(gps.getTime().substring(0, 2));
-            int min = Integer.parseInt(gps.getTime().substring(3, 4));
-            int sec = Integer.parseInt(gps.getTime().substring(4, 6));
-            
-            gc.setSecs(sec + (min *60) + (hour * 60 * 60));
-            
             writeGCRecord(gc);
         }
         return ++pos;	
@@ -882,8 +895,10 @@ public class GoldenEmbedParserMain
     	String buf;
     	GPS gps = new GPS();
 	    //break comma separated line using ","
-	StringTokenizer st = new StringTokenizer(gpsGGA, ",");
-
+        StringTokenizer st = new StringTokenizer(gpsGGA, ",");
+        float degrees=0;
+        float mins=0;
+	
 	while(st.hasMoreTokens())
 	{
             buf = st.nextToken();
@@ -895,17 +910,44 @@ public class GoldenEmbedParserMain
                   break;
               case 1:
                   gps.setTime(buf);
+              	  if(startTime == 0)
+                      startTime = parseTimeStamp(buf);
+            	gc.setSecs(parseTimeStamp(buf) - startTime);
                   break;
               case 2:
                   break;
               case 3:
-                  gps.setLatitude(buf);
+        		  if(buf.startsWith("0"))
+        		  {
+        			  buf = buf.replaceFirst("0", "-");
+            		  degrees = Float.parseFloat(buf.substring(0, 2));
+            		  mins = Float.parseFloat(buf.substring(2, buf.length()));
+        		      gps.setLatitude((String.valueOf(-1 * (Math.abs(degrees)+(mins/60)))));
+        		  }
+        		  else
+        		  {
+        			  degrees = Float.parseFloat(buf.substring(0, 2));
+            		  mins = Float.parseFloat(buf.substring(2, buf.length()));
+            		  gps.setLatitude(String.valueOf(degrees+(mins/60)));
+        		  }
         	  break;
               case 4:
         	   break;
               case 5:
-                   gps.setLongitude(buf);
-        	   break;
+        		  if(buf.startsWith("0"))
+        		  {
+        			  buf = buf.replaceFirst("0", "-");
+        			  degrees = Float.parseFloat(buf.substring(0, 3));
+        		      mins = Float.parseFloat(buf.substring(3,buf.length()));
+        		      gps.setLongitude((String.valueOf(-1 * (Math.abs(degrees)+(mins/60)))));
+        		  }
+        		  else
+        		  {
+        			  degrees = Float.parseFloat(buf.substring(0, 2));
+            		  mins = Float.parseFloat(buf.substring(2, buf.length()));
+            		  gps.setLongitude(String.valueOf(Math.abs(degrees)+(mins/60)));
+        		  }
+                  break;
               default:
                    break;
             }
@@ -940,4 +982,26 @@ public class GoldenEmbedParserMain
             }
         }
     }
-}
+
+    private int parseTimeStamp(String strTimeStamp)
+    {
+        String hour = formatDate(strTimeStamp.substring(0, 2));
+        String min = formatDate(strTimeStamp.substring(3, 4));
+        String sec = formatDate(strTimeStamp.substring(4, 6));
+        
+        return (Integer.parseInt(hour)*60*60) + (Integer.parseInt(min) * 60) + Integer.parseInt(sec);
+    }
+
+    public boolean isDouble( String input )  
+    {  
+       try  
+       {  
+          Double.parseDouble( input );  
+          return true;  
+       }  
+       catch( Exception e)  
+       {  
+          return false;  
+       }  
+    }  
+ }

@@ -13,8 +13,8 @@ public class GoldenCheetah
      private int prevCadSecs;
      private double distance;
      private double speed;
-     private String longitude;
-     private String latitude;
+     private String longitude="";
+     private String latitude="";
      public boolean newWatts;
 
      public double getDistance() {

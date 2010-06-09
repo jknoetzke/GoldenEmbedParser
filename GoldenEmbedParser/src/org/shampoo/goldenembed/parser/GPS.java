@@ -4,8 +4,8 @@ public class GPS
 {
 	private String date;
     private String time;
-    private String latitude;
-    private String longitude;
+    private String latitude= "";
+    private String longitude = "";
 	
 	public String getTime() {
 		return time;
