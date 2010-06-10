@@ -639,7 +639,7 @@ public class GoldenEmbedParserMain
 
     }
 
-    private void ANTrxHandler(byte[] rxBuf, GoldenCheetah gc) 
+    private boolean ANTrxHandler(byte[] rxBuf, GoldenCheetah gc) 
     {
         int msgN = 0;
         int i;
@@ -686,6 +686,7 @@ public class GoldenEmbedParserMain
                 }
             }
         }
+        return errorFlag;
     }
 
     private void closeGCFile() 
@@ -821,7 +822,7 @@ public class GoldenEmbedParserMain
         byte[] bufToSend;
         byte[] timeStamp = new byte[6];
         String strTimeStamp = new String();
-        
+
         if(pos+bufPos >= readBytes.length)
         {
             System.out.println("\n\nTotal Failed Checksums: " + totalErrors + " Out of Total ANT Messages: " + totalTrans);
@@ -862,13 +863,21 @@ public class GoldenEmbedParserMain
             pos += bufPos;
 
         }
-        
         for(int i=0; i < bufPos; i++)
             bufToSend[i] = bufToParse[i];
 
         if(bufToSend[0] == MESG_TX_SYNC) //It's ANT
         {
-            ANTrxHandler(bufToSend, gc);
+            if(ANTrxHandler(bufToSend, gc) == true) //We failed a checksum, start searching for a NL
+            {
+            	while(true)
+            	{
+            	    if(readBytes[pos] == NEW_LINE) 
+            	    	return ++pos;
+            	    else
+            	    	pos++;
+            	}
+            }
             return pos;
         }
         else //It's GPS
@@ -985,9 +994,9 @@ public class GoldenEmbedParserMain
 
     private int parseTimeStamp(String strTimeStamp)
     {
-        String hour = formatDate(strTimeStamp.substring(0, 2));
-        String min = formatDate(strTimeStamp.substring(3, 4));
-        String sec = formatDate(strTimeStamp.substring(4, 6));
+        String hour = strTimeStamp.substring(0, 2);
+        String min = strTimeStamp.substring(2, 4);
+        String sec = strTimeStamp.substring(4, 6);
         
         return (Integer.parseInt(hour)*60*60) + (Integer.parseInt(min) * 60) + Integer.parseInt(sec);
     }
