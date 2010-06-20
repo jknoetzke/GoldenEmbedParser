@@ -634,6 +634,8 @@ public class GoldenEmbedParserMain
         }
         else
         {
+        	power.setWatts(0);
+        	power.setRpm(0);
             double wattCounter = power.getTotalWattCounter();
             double cadCounter = power.getTotalCadCounter();
             power.setTotalWattCounter(wattCounter + 1);
