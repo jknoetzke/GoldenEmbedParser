@@ -220,28 +220,28 @@ public class GoldenEmbedParserMain
 
             if(gc.getPrevsecs() != gc.getSecs())
             {
-                if(gc.getSecs() - gc.getPrevWattsecs() >= 5)
-                {
-                    gc.setWatts(0);
-                }
-                else
-                {
+                //if(gc.getSecs() - gc.getPrevWattsecs() >= 5)
+                //{
+                    //gc.setWatts(0);
+                //}
+                //else
+                //{
                     gc.setWatts((int)Round(power.getWatts() / power.getTotalWattCounter(),0));
                 	gc.setCad((int)Round(power.getRpm() / power.getTotalCadCounter(),0));
-                }
+                //}
                 
                 if (!noGSC) {
             	    if (!power.first0x12)
             	        gc.setCad((int)Round(power.getRpm() / power.getTotalCadCounter(),0));
                 }
-                if(gc.getSecs() - gc.getPrevCadSecs() >= 5)
-                    gc.setCad(0);
+                //if(gc.getSecs() - gc.getPrevCadSecs() >= 5)
+                    //gc.setCad(0);
 
                 if(gc.getSecs () - gc.getPrevSpeedSecs() >= 5)
                     gc.setSpeed(0);
 
                 writeGCRecord(gc);
-                gc.setPrevsecs(gc.getSecs());
+                gc.setPrevWattsecs(gc.getSecs());
                 gc.newWatts = false;
             }
             break;
@@ -546,6 +546,7 @@ public class GoldenEmbedParserMain
                     // Just store it.
                     aByte = new Byte(msgData[i]);
                     power.setR(aByte.intValue());
+                    power.first0x12 = false;
                     if(megaDebug) System.out.println("R: " + aByte.intValue());
                 } else {
                     // We can calculate and then store
@@ -621,9 +622,6 @@ public class GoldenEmbedParserMain
                 double cadCounter = power.getTotalCadCounter();
                 power.setTotalWattCounter(wattCounter + 1);
                 power.setTotalCadCounter(cadCounter + 1);
-                gc.setPrevWattsecs(gc.getSecs());
-                gc.setPrevCadSecs(gc.getSecs());
- 
             } else {
                 if (debug)
                     System.out.println("Spike Found: pdiff: " + pdiff + " rdiff: " + rdiff + " tdiff: " + tdiff+ "\n");
@@ -633,6 +631,15 @@ public class GoldenEmbedParserMain
             power.first0x12 = false;
 
         if(megaDebug)  System.out.println("0x" + UnicodeFormatter.byteToHex(msgData[i])+"\n");
+        }
+        else
+        {
+        	power.setWatts(0);
+        	power.setRpm(0);
+            double wattCounter = power.getTotalWattCounter();
+            double cadCounter = power.getTotalCadCounter();
+            power.setTotalWattCounter(wattCounter + 1);
+            power.setTotalCadCounter(cadCounter + 1);
         }
 
         return --i; // For Loop will advance itself.
@@ -847,8 +854,10 @@ public class GoldenEmbedParserMain
 
         	if(startTime == 0)
         		startTime = parseTimeStamp(timeStamp.toString());
-        	
-        	gc.setSecs(parseTimeStamp(strTimeStamp) - startTime);
+        
+        	int secs = parseTimeStamp(strTimeStamp) - startTime;
+        	if(secs > 0)
+        	    gc.setSecs(secs);
         	
         	pos += timeStampPos+1;
         }
@@ -921,7 +930,10 @@ public class GoldenEmbedParserMain
                   gps.setTime(buf);
               	  if(startTime == 0)
                       startTime = parseTimeStamp(buf);
-            	gc.setSecs(parseTimeStamp(buf) - startTime);
+              	  
+              	int secs = parseTimeStamp(buf) - startTime;
+            	if(secs < 0)
+            	    gc.setSecs(secs);
                   break;
               case 2:
                   break;
@@ -994,11 +1006,19 @@ public class GoldenEmbedParserMain
 
     private int parseTimeStamp(String strTimeStamp)
     {
+    	if(strTimeStamp.trim().length() < 6)
+    		return 0;
         String hour = strTimeStamp.substring(0, 2);
         String min = strTimeStamp.substring(2, 4);
         String sec = strTimeStamp.substring(4, 6);
-        
-        return (Integer.parseInt(hour)*60*60) + (Integer.parseInt(min) * 60) + Integer.parseInt(sec);
+        try
+        {
+            return (Integer.parseInt(hour)*60*60) + (Integer.parseInt(min) * 60) + Integer.parseInt(sec);
+        }
+        catch(NumberFormatException e)
+        {
+        	return 0;
+        }
     }
 
     public boolean isDouble( String input )  
