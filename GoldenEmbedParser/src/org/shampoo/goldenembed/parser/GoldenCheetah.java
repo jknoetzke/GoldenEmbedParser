@@ -92,4 +92,22 @@ public class GoldenCheetah
           this.prevHRSecs = prevHRSecs;
      }
 
+     public GoldenCheetah clone(GoldenCheetah _gc)
+     {
+    	GoldenCheetah gc = new GoldenCheetah();
+    	gc.setCad(_gc.getCad());
+    	gc.setDistance(_gc.getDistance());
+    	gc.setHr(_gc.getHr());
+    	gc.setLen(_gc.getLen());
+    	gc.setPrevCadSecs(_gc.getPrevCadSecs());
+    	gc.setPrevHRSecs(_gc.getPrevHRSecs());
+    	gc.setPrevsecs(_gc.getPrevsecs());
+    	gc.setPrevSpeedSecs(_gc.getPrevSpeedSecs());
+    	gc.setPrevWattsecs(_gc.getPrevWattsecs());
+    	gc.setSecs(_gc.getSecs());
+    	gc.setSpeed(_gc.getSpeed());
+    	gc.setWatts(_gc.getWatts());
+
+        return gc;
+     }
 }
