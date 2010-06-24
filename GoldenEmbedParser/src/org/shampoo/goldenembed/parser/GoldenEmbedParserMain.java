@@ -138,7 +138,7 @@ public class GoldenEmbedParserMain {
         date = cal.get(Calendar.DAY_OF_MONTH);
         String strDay = formatDate(date);
 
-        date = cal.get(Calendar.HOUR);
+        date = cal.get(Calendar.HOUR_OF_DAY);
         String strHour = formatDate(date);
 
         date = cal.get(Calendar.MINUTE);
