@@ -27,6 +27,7 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -894,9 +895,6 @@ public class GoldenEmbedParserMain {
         int diffSecs = endSecs - startSecs;
         int watts = 0;
         long cad = 0;
-        
-        if(startSecs == 607)
-            startSecs = 607;
 
         if(diffSecs >= 3) //Let's no be ridiculous.
         {
@@ -919,7 +917,7 @@ public class GoldenEmbedParserMain {
             if(_gc != null)
             {
                 GoldenCheetah tmpGC = new GoldenCheetah();
-                tmpGC = _gc.clone(gc);
+                tmpGC = _gc.clone(_gc);
                 tmpGC.setCad(cad);
                 tmpGC.setWatts(watts);
                 gcArray.set(gcArray.indexOf(_gc), tmpGC);
@@ -928,18 +926,20 @@ public class GoldenEmbedParserMain {
             {
                 _gc = new GoldenCheetah();
                 _gc = _gc.clone(gc);
+                _gc.setSecs(x);
                 _gc.setWatts(watts);
                 _gc.setCad(cad);
                 gcArray.add(_gc);                
             }
         }
-        lastWattSecs = endSecs;
+        lastWattSecs = endSecs + 1;
 
     }
 
     private void writeOutGCRecords()
     {
         Iterator<GoldenCheetah> iter = gcArray.iterator();
+        Collections.sort(gcArray, new SortBySeconds());
 
         while(iter.hasNext())
         {
