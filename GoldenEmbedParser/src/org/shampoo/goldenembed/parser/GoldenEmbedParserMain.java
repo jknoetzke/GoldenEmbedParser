@@ -144,7 +144,7 @@ public class GoldenEmbedParserMain {
         date = cal.get(Calendar.DAY_OF_MONTH);
         String strDay = formatDate(date);
 
-        date = cal.get(Calendar.HOUR);
+        date = cal.get(Calendar.HOUR_OF_DAY);
         String strHour = formatDate(date);
 
         date = cal.get(Calendar.MINUTE);
@@ -894,8 +894,11 @@ public class GoldenEmbedParserMain {
         int diffSecs = endSecs - startSecs;
         int watts = 0;
         long cad = 0;
+        
+        if(startSecs == 607)
+            startSecs = 607;
 
-        if(diffSecs >= 5) //Let's no be ridiculous.
+        if(diffSecs >= 3) //Let's no be ridiculous.
         {
             watts = 0;
             cad = 0;
@@ -915,8 +918,11 @@ public class GoldenEmbedParserMain {
             _gc = findGCByTime(x); //Do we already have a GC record for this time ?
             if(_gc != null)
             {
-                _gc.setCad(cad);
-                _gc.setWatts(watts);
+                GoldenCheetah tmpGC = new GoldenCheetah();
+                tmpGC = _gc.clone(gc);
+                tmpGC.setCad(cad);
+                tmpGC.setWatts(watts);
+                gcArray.set(gcArray.indexOf(_gc), tmpGC);
             }
             else
             {
@@ -924,11 +930,10 @@ public class GoldenEmbedParserMain {
                 _gc = _gc.clone(gc);
                 _gc.setWatts(watts);
                 _gc.setCad(cad);
+                gcArray.add(_gc);                
             }
-
-            gcArray.add(_gc);
-            lastWattSecs = endSecs;
         }
+        lastWattSecs = endSecs;
 
     }
 
