@@ -197,7 +197,7 @@ public class GoldenEmbedParserMain {
 
             if(gc.getPrevsecs() != gc.getSecs())
             {
-                if(gc.getSecs() - gc.getPrevWattsecs() >= 5)
+                if(gc.getSecs() - gc.getPrevWattsecs() >= 3)
                 {
                     gc.setWatts(0);
                 }
@@ -211,13 +211,13 @@ public class GoldenEmbedParserMain {
             	    if (!power.first0x12)
             	        gc.setCad((int)Round(power.getRpm() / power.getTotalCadCounter(),0));
                 }
-                if(gc.getSecs() - gc.getPrevCadSecs() >= 5)
+                if(gc.getSecs() - gc.getPrevCadSecs() >= 3)
                     gc.setCad(0);
 
-                if(gc.getSecs () - gc.getPrevSpeedSecs() >= 5)
+                if(gc.getSecs () - gc.getPrevSpeedSecs() >= 3)
                     gc.setSpeed(0);
 
-                if(gc.getSecs () - gc.getPrevHRSecs() >= 5)
+                if(gc.getSecs () - gc.getPrevHRSecs() >= 3)
                     gc.setHr(0);
 
                 writeGCRecord(gc);
