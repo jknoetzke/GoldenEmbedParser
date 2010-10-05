@@ -911,7 +911,7 @@ public class GoldenEmbedParserMain {
     private void writeGCRecord(GoldenCheetah gc)
     {
         fout.write(spacer1 + "<sample cad=\"" + gc.getCad() + "\" watts=\"" + gc.getWatts() + "\" kph=\"" + Round(gc.getSpeed(),1) + "\" km=\"" + Round(gc.getDistance(),2) + "\" secs=\""
-                + gc.getSecs() + "\" hr=\"" + gc.getHr() + "\" yaw=\"" + gc.getYaw() + "\" windspeed=\"" + gc.getWindSpeed()+ "\" len=\"1\"/>\n");
+                + gc.getSecs() + "\" hr=\"" + gc.getHr() + "\" yaw=\"" + gc.getYaw() + "\" airspeed=\"" + gc.getWindSpeed()+ "\" len=\"1\"/>\n");
     }
 
     public static double Round(double Rval, int Rpl)
