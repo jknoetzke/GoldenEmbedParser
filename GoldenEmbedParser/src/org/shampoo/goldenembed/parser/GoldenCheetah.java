@@ -15,8 +15,23 @@ public class GoldenCheetah
      private double distance;
      private double speed;
      public boolean newWatts = true;
+     private double yaw;
+     private double windSpeed;
+     
 
-     public double getDistance() {
+     public double getWindSpeed() {
+		return windSpeed;
+	}
+	public void setWindSpeed(double windSpeed) {
+		this.windSpeed = windSpeed;
+	}
+	public double getYaw() {
+		return yaw;
+	}
+	public void setYaw(double yaw) {
+		this.yaw = yaw;
+	}
+	public double getDistance() {
           return distance;
      }
      public void setDistance(double distance) {

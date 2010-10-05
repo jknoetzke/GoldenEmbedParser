@@ -194,6 +194,8 @@ public class GoldenEmbedParserMain {
                 i = ANTParsePower(rxIN, ++i, size, gc);
             else if(chan == 2)
                 i = ANTParseSpeedCad(rxIN, ++i, size, gc);
+            else if(chan == 3)
+                i = ANTParseChung(rxIN, ++i, size, gc);            
 
             if(gc.getPrevsecs() != gc.getSecs())
             {
@@ -693,6 +695,42 @@ public class GoldenEmbedParserMain {
 
     }
 
+    private int ANTParseChung(byte[] msgData, int i, int size, GoldenCheetah gc) 
+    {
+    	byte aByte[] = new byte[2];
+        int end = i + 8;
+        int chungCountFinder = 0;
+
+        for (; i < end; i++) 
+        {
+        	if(chungCountFinder == 4)
+        	{
+        		System.out.println("0x" + UnicodeFormatter.byteToHex(msgData[i])+"\n");
+                aByte[1] = msgData[i];
+                aByte[0] = msgData[++i];
+        		System.out.println("0x" + UnicodeFormatter.byteToHex(msgData[i])+"\n");
+                int yaw = byteArrayToInt(aByte, 0, 2);
+                if(debug) System.out.println("Yaw is: "+ yaw /100.0);
+                gc.setYaw(yaw/100.0);
+
+                System.out.println("0x" + UnicodeFormatter.byteToHex(msgData[i])+"\n");
+                aByte[1] = msgData[++i];
+                aByte[0] = msgData[++i];
+        		System.out.println("0x" + UnicodeFormatter.byteToHex(msgData[i])+"\n");
+                int windSpeed = byteArrayToInt(aByte, 0, 2);
+                if(debug) System.out.println("Wind Speed is: "+ windSpeed /100.0);
+                gc.setWindSpeed(windSpeed/100.0);
+        	}    
+            chungCountFinder++;
+        }
+
+        i = setTimeStamp(msgData, ++i, gc, true);
+
+        return --i; // For Loop will advance itself.    	
+   	
+    	
+    }
+    
     private int ANTparseHRM(byte[] msgData, int i, GoldenCheetah gc) {
 
         byte aByte;
@@ -873,7 +911,7 @@ public class GoldenEmbedParserMain {
     private void writeGCRecord(GoldenCheetah gc)
     {
         fout.write(spacer1 + "<sample cad=\"" + gc.getCad() + "\" watts=\"" + gc.getWatts() + "\" kph=\"" + Round(gc.getSpeed(),1) + "\" km=\"" + Round(gc.getDistance(),2) + "\" secs=\""
-                + gc.getSecs() + "\" hr=\"" + gc.getHr() + "\" len=\"1\"/>\n");
+                + gc.getSecs() + "\" hr=\"" + gc.getHr() + "\" yaw=\"" + gc.getYaw() + "\" windspeed=\"" + gc.getWindSpeed()+ "\" len=\"1\"/>\n");
     }
 
     public static double Round(double Rval, int Rpl)
