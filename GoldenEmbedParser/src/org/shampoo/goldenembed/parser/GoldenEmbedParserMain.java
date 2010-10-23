@@ -189,13 +189,11 @@ public class GoldenEmbedParserMain {
             Byte aByte = new Byte(rxIN[++i]);
             int chan = aByte.intValue();
             if (chan == 0)
-                i = ANTparseHRM(rxIN, i + 2, gc);
-            else if(chan == 1)
                 i = ANTParsePower(rxIN, ++i, size, gc);
+            else if(chan == 1)
+                i = ANTParseChung(rxIN, ++i, size, gc); 
             else if(chan == 2)
-                i = ANTParseSpeedCad(rxIN, ++i, size, gc);
-            else if(chan == 3)
-                i = ANTParseChung(rxIN, ++i, size, gc);            
+                i = ANTParseSpeedCad(rxIN, ++i, size, gc); 
 
             if(gc.getPrevsecs() != gc.getSecs())
             {
@@ -705,15 +703,13 @@ public class GoldenEmbedParserMain {
         {
         	if(chungCountFinder == 4)
         	{
-        		System.out.println("0x" + UnicodeFormatter.byteToHex(msgData[i])+"\n");
                 aByte[1] = msgData[i];
                 aByte[0] = msgData[++i];
-        		System.out.println("0x" + UnicodeFormatter.byteToHex(msgData[i])+"\n");
                 int yaw = byteArrayToInt(aByte, 0, 2);
-                if(debug) System.out.println("Yaw is: "+ yaw /100.0);
+                if(debug) 
+                    System.out.println("Yaw is: "+ yaw /100.0);
                 gc.setYaw(yaw/100.0);
 
-                System.out.println("0x" + UnicodeFormatter.byteToHex(msgData[i])+"\n");
                 aByte[1] = msgData[++i];
                 aByte[0] = msgData[++i];
         		System.out.println("0x" + UnicodeFormatter.byteToHex(msgData[i])+"\n");
