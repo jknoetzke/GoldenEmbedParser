@@ -54,7 +54,8 @@ public class GoldenEmbedParserMain {
 
     Power power;
     SpeedCad speedCad;
-
+    AeroStick aeroStick;
+    
     boolean debug = false;
     boolean megaDebug = false;
 
@@ -101,6 +102,7 @@ public class GoldenEmbedParserMain {
         File file = null;
         power = new Power();
         speedCad = new SpeedCad();
+        aeroStick = new AeroStick();
         GoldenCheetah gc = new GoldenCheetah();
 
         if (args.length < 1) {
@@ -205,6 +207,12 @@ public class GoldenEmbedParserMain {
                 {
                     gc.setWatts((int)Round(power.getWatts() / power.getTotalWattCounter(),0));
                     gc.setCad((int)Round(power.getRpm() / power.getTotalCadCounter(),0));
+                    gc.setWindSpeed(Round(aeroStick.getWindSpeed() / aeroStick.getWindSpeedCounter(),3));
+                    gc.setYaw(Round(aeroStick.getYaw() / aeroStick.getYawCounter(),3));
+                    aeroStick.setWindSpeed(0);
+                    aeroStick.setWindSpeedCounter(0);
+                    aeroStick.setYaw(0);
+                    aeroStick.setYawCounter(0);
                 }
 
                 if (!isGSC) {
@@ -708,14 +716,16 @@ public class GoldenEmbedParserMain {
                 int yaw = byteArrayToInt(aByte, 0, 2);
                 if(debug) 
                     System.out.println("Yaw is: "+ yaw /100.0);
-                gc.setYaw(yaw/100.0);
+                aeroStick.setYaw(aeroStick.getYaw() + (yaw/100.0));
+                aeroStick.setYawCounter(aeroStick.getYawCounter() + 1);
 
                 aByte[1] = msgData[++i];
                 aByte[0] = msgData[++i];
         		System.out.println("0x" + UnicodeFormatter.byteToHex(msgData[i])+"\n");
                 int windSpeed = byteArrayToInt(aByte, 0, 2);
                 if(debug) System.out.println("Wind Speed is: "+ windSpeed /100.0);
-                gc.setWindSpeed(windSpeed/100.0);
+                aeroStick.setWindSpeed(aeroStick.getWindSpeed() + (windSpeed/100.0));
+                aeroStick.setWindSpeedCounter(aeroStick.getWindSpeedCounter() + 1);
         	}    
             chungCountFinder++;
         }
