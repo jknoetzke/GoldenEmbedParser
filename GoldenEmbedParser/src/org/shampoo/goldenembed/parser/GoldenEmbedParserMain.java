@@ -58,6 +58,7 @@ public class GoldenEmbedParserMain
     Power power;
     SpeedCad speedCad;
     GoldenCheetah gc = new GoldenCheetah();
+    int pos = 0; //Main Buffer Position
 
     boolean debug = false;
     boolean megaDebug = false;
@@ -105,7 +106,6 @@ public class GoldenEmbedParserMain
         File file = null;
         power = new Power();
         speedCad = new SpeedCad();
-        int pos = 0;
         
         if (args.length < 1) {
             System.out.println("Missing Input File");
@@ -123,15 +123,13 @@ public class GoldenEmbedParserMain
                debug = true;
                megaDebug = true;
             }
-            if(args[1].equalsIgnoreCase("-nogsc") || (args[2].equalsIgnoreCase("-nogsc")))
-            	noGSC = true;
         }
 
         byte[] readBytes;
         try {
             readBytes = getBytesFromFile(file);
             while(pos != file.length() )
-                pos = readBuffer(readBytes, pos, file.getParent());
+                pos = readBuffer(readBytes, file.getParent());
             
             System.out.println("\n\nTotal Failed Checksums: " + totalErrors + " Out of Total ANT Messages: " + totalTrans);
             System.out.println("% Failure: " + (totalErrors / totalTrans) * 100.0);
@@ -146,8 +144,9 @@ public class GoldenEmbedParserMain
         }
     }
 
-    private int ANTParsePower(byte[] msgData, int i, int size, GoldenCheetah gc)
+    private int ANTParsePower(byte[] msgData, int size, GoldenCheetah gc)
     {
+        int i = 5;
         if(megaDebug) System.out.println("0x" + UnicodeFormatter.byteToHex(msgData[i]));
         if (msgData[i] == 0x12) // Parse ANT+ 0x12 message (QUARQ)
         {
@@ -166,8 +165,9 @@ public class GoldenEmbedParserMain
         }
     }
 
-    private int ANTparseHRM(byte[] msgData, int i, GoldenCheetah gc) 
+    private int ANTparseHRM(byte[] msgData, GoldenCheetah gc) 
     {
+        int i = 5;
         byte aByte;
         int end = i + 8;
         int hrCountFinder = 0;
@@ -192,14 +192,15 @@ public class GoldenEmbedParserMain
         return --i; // For Loop will advance itself.
     }
 
-    private int ANTrxMsg(byte[] rxIN, int i, int size, GoldenCheetah gc) 
+    private void ANTrxMsg(byte[] rxIN, int size, GoldenCheetah gc) 
     {
+        int i = 2;
         if(megaDebug) System.out.println("Converting 0x"+ UnicodeFormatter.byteToHex(rxIN[i]));
         switch (rxIN[i]) {
         case MESG_RESPONSE_EVENT_ID:
             if (debug)
                 System.out.println("ID: MESG_RESPONSE_EVENT_ID\n");
-            i = ANTresponseHandler(rxIN, i, size, gc);
+            ANTresponseHandler(rxIN, size, gc);
             break;
         case MESG_CAPABILITIES_ID:
             if (debug)
@@ -212,30 +213,21 @@ public class GoldenEmbedParserMain
             Byte aByte = new Byte(rxIN[++i]);
             int chan = aByte.intValue();
             if (chan == 0)
-                i = ANTparseHRM(rxIN, i + 2, gc);
+                i = ANTparseHRM(rxIN, gc);
             else if(chan == 1)
-                i = ANTParsePower(rxIN, ++i, size, gc);
+                ANTParsePower(rxIN, size, gc);
             else if(chan == 2)
-                i = ANTParseSpeedCad(rxIN, ++i, size, gc);
+                ANTParseSpeedCad(rxIN, size, gc);
 
             if(gc.getPrevsecs() != gc.getSecs())
             {
-                //if(gc.getSecs() - gc.getPrevWattsecs() >= 5)
-                //{
-                    //gc.setWatts(0);
-                //}
-                //else
-                //{
-                    gc.setWatts((int)Round(power.getWatts() / power.getTotalWattCounter(),0));
-                	gc.setCad((int)Round(power.getRpm() / power.getTotalCadCounter(),0));
-                //}
+                gc.setWatts((int)Round(power.getWatts() / power.getTotalWattCounter(),0));
+                gc.setCad((int)Round(power.getRpm() / power.getTotalCadCounter(),0));
                 
                 if (!noGSC) {
             	    if (!power.first0x12)
             	        gc.setCad((int)Round(power.getRpm() / power.getTotalCadCounter(),0));
                 }
-                //if(gc.getSecs() - gc.getPrevCadSecs() >= 5)
-                    //gc.setCad(0);
 
                 if(gc.getSecs () - gc.getPrevSpeedSecs() >= 5)
                     gc.setSpeed(0);
@@ -249,43 +241,41 @@ public class GoldenEmbedParserMain
         case MESG_CHANNEL_ID_ID:
             if (debug)
                 System.out.println("ID: MESG_CHANNEL_ID_ID\n");
-            i = ANTChannelID(rxIN, ++i, gc);
+            ANTChannelID(rxIN, gc);
             break;
         default:
             if (debug)
                 System.out.println("ID: Unknown 0x" + UnicodeFormatter.byteToHex(rxIN[i]));
         }
-        return i;
+        return;
     }
 
-    public int ANTChannelID(byte[] msgIN, int pos, GoldenCheetah gc) 
+    public void ANTChannelID(byte[] msgIN, GoldenCheetah gc) 
     {
         byte[] devNo = new byte[2];
 
-        pos += 2;
-        devNo[0] = msgIN[pos];
+        int i = pos + 2;
+        devNo[0] = msgIN[i];
         if (megaDebug)
-            System.out.println("Device Type is: 0x" + UnicodeFormatter.byteToHex(msgIN[pos]));
+            System.out.println("Device Type is: 0x" + UnicodeFormatter.byteToHex(msgIN[i]));
 
-        pos--;
-        devNo[1] = msgIN[pos];
+        i--;
+        devNo[1] = msgIN[i];
         if (megaDebug)
-            System.out.println("Device Type is: 0x" + UnicodeFormatter.byteToHex(msgIN[pos]));
+            System.out.println("Device Type is: 0x" + UnicodeFormatter.byteToHex(msgIN[i]));
 
         int deviceNum = byteArrayToInt(devNo, 0, 2);
         if (debug)
             System.out.println("Device Number is: " + deviceNum);
 
-        pos += 2;
+        i += 2;
         if (debug)
-            System.out.println("Device Type is: 0x" + UnicodeFormatter.byteToHex(msgIN[pos]));
+            System.out.println("Device Type is: 0x" + UnicodeFormatter.byteToHex(msgIN[i]));
         pos++;
         if (debug)
-            System.out.println("Man ID is: 0x" + UnicodeFormatter.byteToHex(msgIN[pos]) + "\n");
+            System.out.println("Man ID is: 0x" + UnicodeFormatter.byteToHex(msgIN[i]) + "\n");
 
-        pos += 2;
-
-        return --pos;
+        return;
     }
 
     public byte[] getBytesFromFile(File file) throws IOException 
@@ -324,8 +314,9 @@ public class GoldenEmbedParserMain
         return bytes;
     }
 
-    private int ANTParseSpeedCad(byte[] msgData, int i, int size, GoldenCheetah gc)
+    private int ANTParseSpeedCad(byte[] msgData, int size, GoldenCheetah gc)
     {
+        int i = 5;
 
         int crankrev = 0;
         int cranktime = 0;
@@ -672,17 +663,17 @@ public class GoldenEmbedParserMain
             } 
 	        else if(msgN == 2)
 	        {
-                byte checksum = checkSum(rxBuf, size, i - 2);
+                byte checksum = checkSum(rxBuf, size);
                 if (checksum == rxBuf[size + i + 1]) // Check if chksum = msg
                 // chksum
                 {
                     inMsg = true;
                     // Handle Message
-                    i = ANTrxMsg(rxBuf, i, size, gc);
+                    ANTrxMsg(rxBuf, size, gc);
                     msgN++;
                 } 
-		    else
-	       	{
+		        else
+	       	    {
                     if(megaDebug) System.out.println("CheckSum Mismatch 0x"+ UnicodeFormatter.byteToHex(rxBuf[size+i+1]) + "!=: 0x" + UnicodeFormatter.byteToHex(checksum));
                     msgN = 0;
                     inMsg = true;
@@ -692,6 +683,8 @@ public class GoldenEmbedParserMain
                     }
                 }
             }
+	        else
+	            return errorFlag;
         }
         return errorFlag;
     }
@@ -704,14 +697,11 @@ public class GoldenEmbedParserMain
         fout.close();
     }
 
-    private byte checkSum(byte data[], int length, int pos) 
+    private byte checkSum(byte data[], int length) 
     {
         byte chksum = 0x0;
 
-        if(pos < 0)
-            return chksum;
-
-        for (int i = pos; i < data.length-2; i++) {
+        for (int i = 0; i < length+3; i++) {
             chksum ^= data[i]; // +1 since skip prefix sync code, we already
             // counted it
         }
@@ -719,12 +709,11 @@ public class GoldenEmbedParserMain
         return chksum;
     }
 
-    private int ANTresponseHandler(byte rxBuf[], int pos, int size, GoldenCheetah gc) 
+    private void ANTresponseHandler(byte rxBuf[], int size, GoldenCheetah gc) 
     {
-        pos++;
-        byte ch = rxBuf[0 + pos];
-        byte id = rxBuf[1 + pos];
-        byte code = rxBuf[2 + pos];
+        byte ch = rxBuf[3];
+        byte id = rxBuf[4];
+        byte code = rxBuf[5];
 
         if (debug)
         {
@@ -779,7 +768,7 @@ public class GoldenEmbedParserMain
             break;
         }
 
-        return --pos; // For Loop will move 1 forward
+        return; // For Loop will move 1 forward
     }
 
     private int ANTCfgCapabilties(int i, int size) 
@@ -817,18 +806,14 @@ public class GoldenEmbedParserMain
     
     private String convertBytesToString(byte[] bytes)
     {
-        return new String(bytes);    	
+        return new String(bytes).trim();    	
     }
 
-    private int readBuffer(byte[] readBytes, int pos, String filePath)
+    private int readBuffer(byte[] readBytes, String filePath)
     {
-    	byte[] bufToParse = new byte[256];
-    	int bufPos = 0;
-    	int timeStampPos = 0;
+        int bufPos = 0;
         GPS gps = new GPS();
         byte[] bufToSend;
-        byte[] timeStamp = new byte[6];
-        String strTimeStamp = new String();
 
         if(pos+bufPos >= readBytes.length)
         {
@@ -838,142 +823,107 @@ public class GoldenEmbedParserMain
             closeGCFile();
             System.exit(0);
         }
-        if(readBytes[pos+bufPos] == MESG_TX_SYNC)
-        {
-        	Byte aByte = new Byte(readBytes[pos+bufPos+1]);
-        	int size = aByte.intValue();
-        	bufToSend = new byte[size+5];
-        	for(; bufPos < bufToSend.length; bufPos++)
-		        bufToParse[bufPos] = readBytes[bufPos+pos];
-
-        	pos += bufPos-1;
-
-        	for(; timeStampPos < timeStamp.length; timeStampPos++)
-		        timeStamp[timeStampPos] = readBytes[timeStampPos+pos];
-        	strTimeStamp = convertBytesToString(timeStamp);
-
-        	if(startTime == 0)
-        		startTime = parseTimeStamp(timeStamp.toString());
         
-        	int secs = parseTimeStamp(strTimeStamp) - startTime;
-        	if(secs > 0)
-        	    gc.setSecs(secs);
-        	
-        	pos += timeStampPos+1;
-        }
-        else
+        Byte aByte = new Byte(readBytes[pos+bufPos+1]);
+        int size = aByte.intValue();
+        bufToSend = new byte[size+4];
+        for(; bufPos < bufToSend.length; bufPos++)
+            bufToSend[bufPos] = readBytes[bufPos+pos];        
+        if(ANTrxHandler(bufToSend, gc) == true)
         {
-            while(readBytes[pos+bufPos] != NEW_LINE)
-            {
-    		    bufToParse[bufPos] = readBytes[pos+bufPos];
-    		    bufPos++;
-            }
-            bufToSend = new byte[bufPos];
-            pos += bufPos;
-
+            pos++;
+            //We failed a checksum skip..
+            while(readBytes[pos] != MESG_TX_SYNC)
+                pos++;
+            return pos;            
         }
-        for(int i=0; i < bufPos; i++)
-            bufToSend[i] = bufToParse[i];
-
-        if(bufToSend[0] == MESG_TX_SYNC) //It's ANT
-        {
-            if(ANTrxHandler(bufToSend, gc) == true) //We failed a checksum, start searching for a NL
-            {
-            	while(true)
-            	{
-            	    if(readBytes[pos] == NEW_LINE) 
-            	    	return ++pos;
-            	    else
-            	    	pos++;
-            	}
-            }
-            return pos;
-        }
-        else //It's GPS
-        {
-            String gpsGGA = convertBytesToString(bufToSend);
-            gps = GPSHandler(gpsGGA);
-            //Write to file here
-            gc.setLatitude(gps.getLatitude());
-            gc.setLongitude(gps.getLongitude());
-            //If we haven't created the file, create it
-            if(outFile == null)
-                initOutFile(gps, filePath);
+        
+        pos = (pos + size+ 4);
+        //Now Parse GPS
+        gps = GPSHandler(readBytes);
+        
+        gc.setLatitude(gps.getLatitude());
+        gc.setLongitude(gps.getLongitude());
+        
+        gc.setSecs(parseTimeStamp(gps.getTime()));
+        
+        //If we haven't created the file, create it
+        if(outFile == null)
+            initOutFile(gps, filePath);
             
-            writeGCRecord(gc);
-        }
+        writeGCRecord(gc);
+       
         return ++pos;	
     }
 
-    private GPS GPSHandler(String gpsGGA)
+    private byte[] parseOutGPS(byte[] buf, int length, int pos)
     {
-        //LAT       LONG
-    	//240410,184953.382,A,4532.0904,N,07334.5452,W
-    	int column = 0;
-    	String buf;
+        byte[] position = new byte[length];
+        
+        for(int i=0; i < length; i++)
+        {
+            position[i] = buf[pos++];
+        }
+        return position;
+
+    }
+    
+    private GPS GPSHandler(byte[] gpsGGA)
+    {
     	GPS gps = new GPS();
-	    //break comma separated line using ","
-        StringTokenizer st = new StringTokenizer(gpsGGA, ",");
-        float degrees=0;
+
+    	float degrees=0;
         float mins=0;
-	
-	while(st.hasMoreTokens())
-	{
-            buf = st.nextToken();
-		
-            switch(column)
-            {
-              case 0: //Date
-                  gps.setDate(buf);
-                  break;
-              case 1:
-                  gps.setTime(buf);
-              	  if(startTime == 0)
-                      startTime = parseTimeStamp(buf);
-              	  
-              	int secs = parseTimeStamp(buf) - startTime;
-            	if(secs < 0)
-            	    gc.setSecs(secs);
-                  break;
-              case 2:
-                  break;
-              case 3:
-        		  if(buf.startsWith("0"))
-        		  {
-        			  buf = buf.replaceFirst("0", "-");
-            		  degrees = Float.parseFloat(buf.substring(0, 2));
-            		  mins = Float.parseFloat(buf.substring(2, buf.length()));
-        		      gps.setLatitude((String.valueOf(-1 * (Math.abs(degrees)+(mins/60)))));
-        		  }
-        		  else
-        		  {
-        			  degrees = Float.parseFloat(buf.substring(0, 2));
-            		  mins = Float.parseFloat(buf.substring(2, buf.length()));
-            		  gps.setLatitude(String.valueOf(degrees+(mins/60)));
-        		  }
-        	  break;
-              case 4:
-        	   break;
-              case 5:
-        		  if(buf.startsWith("0"))
-        		  {
-        			  buf = buf.replaceFirst("0", "-");
-        			  degrees = Float.parseFloat(buf.substring(0, 3));
-        		      mins = Float.parseFloat(buf.substring(3,buf.length()));
-        		      gps.setLongitude((String.valueOf(-1 * (Math.abs(degrees)+(mins/60)))));
-        		  }
-        		  else
-        		  {
-        			  degrees = Float.parseFloat(buf.substring(0, 2));
-            		  mins = Float.parseFloat(buf.substring(2, buf.length()));
-            		  gps.setLongitude(String.valueOf(Math.abs(degrees)+(mins/60)));
-        		  }
-                  break;
-              default:
-                   break;
-            }
-            column++;
-	   }
+        
+        byte[] position = parseOutGPS(gpsGGA, 15, pos);
+        String strPosition = convertBytesToString(position);
+
+        pos += 15;
+
+        if(strPosition.startsWith("0"))
+        {
+            strPosition = strPosition.replaceFirst("0", "-");
+            degrees = Float.parseFloat(strPosition.substring(0, 2));
+            mins = Float.parseFloat(strPosition.substring(2, strPosition.length()));
+            gps.setLatitude((String.valueOf(-1 * (Math.abs(degrees)+(mins/60)))));
+        }
+        else
+         {
+             degrees = Float.parseFloat(strPosition.substring(0, 2));
+             mins = Float.parseFloat(strPosition.substring(2, strPosition.length()));
+             gps.setLatitude(String.valueOf(degrees+(mins/60)));
+         }
+
+        position = parseOutGPS(gpsGGA, 15, pos);
+        strPosition = convertBytesToString(position);
+        pos += 15;
+      
+        if(strPosition.startsWith("0"))
+        {
+            strPosition = strPosition.replaceFirst("0", "-");
+        	degrees = Float.parseFloat(strPosition.substring(0, 3));
+        	mins = Float.parseFloat(strPosition.substring(3,strPosition.length()));
+        	gps.setLongitude((String.valueOf(-1 * (Math.abs(degrees)+(mins/60)))));
+        }
+        else
+        {
+            degrees = Float.parseFloat(strPosition.substring(0, 2));
+            mins = Float.parseFloat(strPosition.substring(2, strPosition.length()));
+            gps.setLongitude(String.valueOf(Math.abs(degrees)+(mins/60)));
+        }
+   
+        //Date
+        position = parseOutGPS(gpsGGA, 6, pos);
+        strPosition = convertBytesToString(position);
+        pos += 6;
+        gps.setDate(strPosition);        
+        
+        //Time
+        position = parseOutGPS(gpsGGA, 10, pos);
+        strPosition = convertBytesToString(position);
+        pos += 10;
+        gps.setTime(strPosition);        
+        
        return gps;
      }
 
