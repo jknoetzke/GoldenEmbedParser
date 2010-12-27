@@ -42,6 +42,8 @@ public class GoldenEmbedParserMain
     static final byte MESG_CHANNEL_EVENT_ERROR = 0x01;
     static final byte NEW_LINE = (byte) 0x0A;
     static final double PI = 3.14159265;
+    static final double KNOTS_TO_KILOMETERS= 1.85200;
+    
     File outFile = null;
 
     float totalTrans = 0;
@@ -843,7 +845,7 @@ public class GoldenEmbedParserMain
 
         gc.setLatitude(gps.getLatitude());
         gc.setLongitude(gps.getLongitude());
-        gc.setSpeed(gps.getSpeed());
+        gc.setSpeed(gps.getSpeed() * KNOTS_TO_KILOMETERS);
 
         gc.setSecs(parseTimeStamp(gps.getTime()));
 
