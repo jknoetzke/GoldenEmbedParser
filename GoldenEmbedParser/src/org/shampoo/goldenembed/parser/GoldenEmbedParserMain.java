@@ -27,7 +27,7 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.util.StringTokenizer;
 
-public class GoldenEmbedParserMain 
+public class GoldenEmbedParserMain
 {
     static final byte MESG_RESPONSE_EVENT_ID = 0x40;
     static final byte MESG_CAPABILITIES_ID = 0x54;
@@ -80,7 +80,7 @@ public class GoldenEmbedParserMain
         power = new Power();
     }
 
-    private void initGCFile(String year, String month, String day, String hour, String minute, String second) 
+    private void initGCFile(String year, String month, String day, String hour, String minute, String second)
     {
         fout.write("<!DOCTYPE GoldenCheetah>\n");
         fout.write("<ride>\n");
@@ -91,7 +91,7 @@ public class GoldenEmbedParserMain
         fout.write("<samples>\n");
     }
 
-    private String formatDate(String toFormat) 
+    private String formatDate(String toFormat)
     {
         if (toFormat.length() < 2)
         	toFormat = "0" + toFormat;
@@ -100,13 +100,13 @@ public class GoldenEmbedParserMain
 
     }
 
-    public GoldenEmbedParserMain(String[] args) 
+    public GoldenEmbedParserMain(String[] args)
     {
         // Load up the file
         File file = null;
         power = new Power();
         speedCad = new SpeedCad();
-        
+
         if (args.length < 1) {
             System.out.println("Missing Input File");
             System.exit(1);
@@ -130,15 +130,15 @@ public class GoldenEmbedParserMain
             readBytes = getBytesFromFile(file);
             while(pos != file.length() )
                 pos = readBuffer(readBytes, file.getParent());
-            
+
             System.out.println("\n\nTotal Failed Checksums: " + totalErrors + " Out of Total ANT Messages: " + totalTrans);
             System.out.println("% Failure: " + (totalErrors / totalTrans) * 100.0);
             System.out.println("Total CAD or Watt Spikes: " + totalSpikes);
             closeGCFile();
             System.exit(0);
-            
-            
-        } catch (IOException e) 
+
+
+        } catch (IOException e)
         {
             e.printStackTrace();
         }
@@ -165,7 +165,7 @@ public class GoldenEmbedParserMain
         }
     }
 
-    private int ANTparseHRM(byte[] msgData, GoldenCheetah gc) 
+    private int ANTparseHRM(byte[] msgData, GoldenCheetah gc)
     {
         int i = 5;
         byte aByte;
@@ -192,7 +192,7 @@ public class GoldenEmbedParserMain
         return --i; // For Loop will advance itself.
     }
 
-    private void ANTrxMsg(byte[] rxIN, int size, GoldenCheetah gc) 
+    private void ANTrxMsg(byte[] rxIN, int size, GoldenCheetah gc)
     {
         int i = 2;
         if(megaDebug) System.out.println("Converting 0x"+ UnicodeFormatter.byteToHex(rxIN[i]));
@@ -223,7 +223,7 @@ public class GoldenEmbedParserMain
             {
                 gc.setWatts((int)Round(power.getWatts() / power.getTotalWattCounter(),0));
                 gc.setCad((int)Round(power.getRpm() / power.getTotalCadCounter(),0));
-                
+
                 if (!noGSC) {
             	    if (!power.first0x12)
             	        gc.setCad((int)Round(power.getRpm() / power.getTotalCadCounter(),0));
@@ -250,7 +250,7 @@ public class GoldenEmbedParserMain
         return;
     }
 
-    public void ANTChannelID(byte[] msgIN, GoldenCheetah gc) 
+    public void ANTChannelID(byte[] msgIN, GoldenCheetah gc)
     {
         byte[] devNo = new byte[2];
 
@@ -278,7 +278,7 @@ public class GoldenEmbedParserMain
         return;
     }
 
-    public byte[] getBytesFromFile(File file) throws IOException 
+    public byte[] getBytesFromFile(File file) throws IOException
     {
         InputStream is = new FileInputStream(file);
 
@@ -414,16 +414,16 @@ public class GoldenEmbedParserMain
 
     }
 
-    public int ANTParsePower0x11(byte[] msgData, int i, int size, GoldenCheetah gc) 
+    public int ANTParsePower0x11(byte[] msgData, int i, int size, GoldenCheetah gc)
     {
     	// For parsing ANT+ 0x11 messages
     	// Counter (u8) Unknown (u8) Cadence (u8) Wheel_RPM_Counter (u16) Torque_Counter (u16)
     	// Cnt_diff = (Last Counter - Current Counter + 256) mod 256
     	// Torque_diff = (Last Torque - Current Torque + 65536) mod 65536
-    	// NM = Torque_diff / 32 / Cnt_diff 
+    	// NM = Torque_diff / 32 / Cnt_diff
     	// Wheel_RPM_diff = (Last Wheel RPM - Current Wheel_RPM + 65536) mod 65536
     	// Power = 122880 * Cnt_diff / Wheel_RPM_diff
-    	
+
     	int c1, c2, pr1, t1, r1;
 
     	double cdiff = 0;
@@ -432,27 +432,27 @@ public class GoldenEmbedParserMain
         double nm = 0;
         double rpm = 0;
         double watts = 0;
-    	
+
         byte aByte;
         byte[] byteArray = new byte[2];
-        
+
         // 0x11 Message counter
         aByte = msgData[i++];
         c1 = unsignedByteToInt(aByte);
-        
+
         // Unknown counter
         aByte = msgData[i++];
         c2 = unsignedByteToInt(aByte);
-              
+
         // Pedal RPM (cadence) value
         aByte = msgData[i++];
         pr1 = unsignedByteToInt(aByte);
-        
+
         // Wheel RPM counter
         byteArray[1] = msgData[i++];
         byteArray[0] = msgData[i++];
         r1 = byteArrayToInt(byteArray, 0, 2);
-           
+
         // Torque counter
         byteArray[1] = msgData[i++];
         byteArray[0] = msgData[i++];
@@ -463,19 +463,19 @@ public class GoldenEmbedParserMain
         	power.setR(r1);
         	power.setT(t1);
         	power.setCnt(c1);
-        } 
-        else if (c1 != power.getCnt()) 
+        }
+        else if (c1 != power.getCnt())
         {
         		cdiff = (( 256 + c1 - power.getCnt()) % 256);
             	tdiff = ( 65536 + t1 - power.getT() ) % 65536;
         		rdiff = ( 65536 + r1 - power.getR() ) % 65536;
-        		
-        		if (tdiff != 0 && rdiff != 0) 
+
+        		if (tdiff != 0 && rdiff != 0)
         		{
         			nm = (float)tdiff / 32 / (float)cdiff;
         			rpm = 122880 * (float)cdiff / (float)rdiff;
         			watts = rpm * nm * 2 * PI / 60;
-        	        
+
         			if (debug) {
                         System.out.format("ANTParsePower0x11 cad: %3d  nm: %5.2f  rpm: %5.2f  watts: %6.1f", pr1, nm, rpm, watts);
                         System.out.println();
@@ -503,17 +503,17 @@ public class GoldenEmbedParserMain
                             System.out.println("Spike Found: cdiff: " + cdiff + " rdiff: " + rdiff + " tdiff: " + tdiff+ "\n");
                         totalSpikes++;
                     }
-              } 
+              }
         }
 
         power.setR(r1);
     	power.setT(t1);
     	power.setCnt(c1);
-    	
+
         return --i; // For Loop will advance itself.
     }
 
-    public int ANTParsePower0x12(byte[] msgData, int i, int size, GoldenCheetah gc) 
+    public int ANTParsePower0x12(byte[] msgData, int i, int size, GoldenCheetah gc)
     {
         int t1;
         int p1;
@@ -606,7 +606,7 @@ public class GoldenEmbedParserMain
                     power.setWatts(0);
                     gc.newWatts = true;
                 }
- 
+
             	power.setRpm(power.getRpm() + rpm);
                 power.setWatts(power.getWatts() + watts);
                 double wattCounter = power.getTotalWattCounter();
@@ -637,16 +637,16 @@ public class GoldenEmbedParserMain
 
     }
 
-    private boolean ANTrxHandler(byte[] rxBuf, GoldenCheetah gc) 
+    private boolean ANTrxHandler(byte[] rxBuf, GoldenCheetah gc)
     {
         int msgN = 0;
         int i;
         int size = 0;
         boolean inMsg = true;
 
-        for (i = 0; i < rxBuf.length; i++) 
+        for (i = 0; i < rxBuf.length; i++)
 	    {
-            if (rxBuf[i] == MESG_TX_SYNC && inMsg) 
+            if (rxBuf[i] == MESG_TX_SYNC && inMsg)
 	        {
                 inMsg = false;
                 msgN = 0; // Always reset msg count if we get a sync
@@ -654,13 +654,13 @@ public class GoldenEmbedParserMain
                 errorFlag = false;
                 totalTrans++;
                 if(megaDebug) System.out.println("RX: [sync]");
-            } 
-	        else if (msgN == 1) 
+            }
+	        else if (msgN == 1)
 	        {
                 Byte aByte = new Byte(rxBuf[i]);
                 msgN++; // Size
                 size = aByte.intValue();
-            } 
+            }
 	        else if(msgN == 2)
 	        {
                 byte checksum = checkSum(rxBuf, size);
@@ -671,7 +671,7 @@ public class GoldenEmbedParserMain
                     // Handle Message
                     ANTrxMsg(rxBuf, size, gc);
                     msgN++;
-                } 
+                }
 		        else
 	       	    {
                     if(megaDebug) System.out.println("CheckSum Mismatch 0x"+ UnicodeFormatter.byteToHex(rxBuf[size+i+1]) + "!=: 0x" + UnicodeFormatter.byteToHex(checksum));
@@ -689,7 +689,7 @@ public class GoldenEmbedParserMain
         return errorFlag;
     }
 
-    private void closeGCFile() 
+    private void closeGCFile()
     {
         fout.write(spacer1 + "</samples>\n");
         fout.write("</ride>\n");
@@ -697,7 +697,7 @@ public class GoldenEmbedParserMain
         fout.close();
     }
 
-    private byte checkSum(byte data[], int length) 
+    private byte checkSum(byte data[], int length)
     {
         byte chksum = 0x0;
 
@@ -709,7 +709,7 @@ public class GoldenEmbedParserMain
         return chksum;
     }
 
-    private void ANTresponseHandler(byte rxBuf[], int size, GoldenCheetah gc) 
+    private void ANTresponseHandler(byte rxBuf[], int size, GoldenCheetah gc)
     {
         byte ch = rxBuf[3];
         byte id = rxBuf[4];
@@ -771,18 +771,18 @@ public class GoldenEmbedParserMain
         return; // For Loop will move 1 forward
     }
 
-    private int ANTCfgCapabilties(int i, int size) 
+    private int ANTCfgCapabilties(int i, int size)
     {
         return i + size + 4;
     }
 
-    public static int byteArrayToInt(byte[] b, int offset, int size) 
+    public static int byteArrayToInt(byte[] b, int offset, int size)
     {
     	uShort uint = new uShort(b, offset);
     	return uint.getValue();
     }
-    
-    private void writeGCRecord(GoldenCheetah gc) 
+
+    private void writeGCRecord(GoldenCheetah gc)
     {
     	if(gc.getSecs() != gc.getPrevsecs())
     	{
@@ -790,7 +790,7 @@ public class GoldenEmbedParserMain
     		{
                 fout.write(spacer1 + "<sample cad=\"" + gc.getCad() + "\" watts=\"" + gc.getWatts() + "\" kph=\"" + Round(gc.getSpeed(),1) + "\" km=\"" + Round(gc.getDistance(),2) + "\" secs=\""
                          + gc.getSecs() + "\" hr=\"" + gc.getHr() + "\" lon=\"" + gc.getLongitude() + "\" lat=\"" + gc.getLatitude() +"\" len=\"1\"/>\n");
-            
+
                 gc.setPrevsecs(gc.getSecs());
     		}
     	}
@@ -803,10 +803,10 @@ public class GoldenEmbedParserMain
           double tmp = Math.round(Rval);
           return (double)tmp/p;
     }
-    
+
     private String convertBytesToString(byte[] bytes)
     {
-        return new String(bytes).trim();    	
+        return new String(bytes).trim();
     }
 
     private int readBuffer(byte[] readBytes, String filePath)
@@ -823,43 +823,43 @@ public class GoldenEmbedParserMain
             closeGCFile();
             System.exit(0);
         }
-        
+
         Byte aByte = new Byte(readBytes[pos+bufPos+1]);
         int size = aByte.intValue();
         bufToSend = new byte[size+4];
         for(; bufPos < bufToSend.length; bufPos++)
-            bufToSend[bufPos] = readBytes[bufPos+pos];        
+            bufToSend[bufPos] = readBytes[bufPos+pos];
         if(ANTrxHandler(bufToSend, gc) == true)
         {
             pos++;
             //We failed a checksum skip..
             while(readBytes[pos] != MESG_TX_SYNC)
                 pos++;
-            return pos;            
+            return pos;
         }
-        
+
         pos = (pos + size+ 4);
         //Now Parse GPS
         gps = GPSHandler(readBytes);
-        
+
         gc.setLatitude(gps.getLatitude());
         gc.setLongitude(gps.getLongitude());
-        
+
         gc.setSecs(parseTimeStamp(gps.getTime()));
-        
+
         //If we haven't created the file, create it
         if(outFile == null)
             initOutFile(gps, filePath);
-            
+
         writeGCRecord(gc);
-       
-        return ++pos;	
+
+        return ++pos;
     }
 
     private byte[] parseOutGPS(byte[] buf, int length, int pos)
     {
         byte[] position = new byte[length];
-        
+
         for(int i=0; i < length; i++)
         {
             position[i] = buf[pos++];
@@ -867,14 +867,14 @@ public class GoldenEmbedParserMain
         return position;
 
     }
-    
+
     private GPS GPSHandler(byte[] gpsGGA)
     {
     	GPS gps = new GPS();
 
     	float degrees=0;
         float mins=0;
-        
+
         byte[] position = parseOutGPS(gpsGGA, 15, pos);
         String strPosition = convertBytesToString(position);
 
@@ -897,7 +897,7 @@ public class GoldenEmbedParserMain
         position = parseOutGPS(gpsGGA, 15, pos);
         strPosition = convertBytesToString(position);
         pos += 15;
-      
+
         if(strPosition.startsWith("0"))
         {
             strPosition = strPosition.replaceFirst("0", "-");
@@ -911,19 +911,19 @@ public class GoldenEmbedParserMain
             mins = Float.parseFloat(strPosition.substring(2, strPosition.length()));
             gps.setLongitude(String.valueOf(Math.abs(degrees)+(mins/60)));
         }
-   
+
         //Date
         position = parseOutGPS(gpsGGA, 6, pos);
         strPosition = convertBytesToString(position);
         pos += 6;
-        gps.setDate(strPosition);        
-        
+        gps.setDate(strPosition);
+
         //Time
         position = parseOutGPS(gpsGGA, 10, pos);
         strPosition = convertBytesToString(position);
         pos += 10;
-        gps.setTime(strPosition);        
-        
+        gps.setTime(strPosition);
+
        return gps;
      }
 
@@ -971,16 +971,16 @@ public class GoldenEmbedParserMain
         }
     }
 
-    public boolean isDouble( String input )  
-    {  
-       try  
-       {  
-          Double.parseDouble( input );  
-          return true;  
-       }  
-       catch( Exception e)  
-       {  
-          return false;  
-       }  
-    }  
+    public boolean isDouble( String input )
+    {
+       try
+       {
+          Double.parseDouble( input );
+          return true;
+       }
+       catch( Exception e)
+       {
+          return false;
+       }
+    }
  }
