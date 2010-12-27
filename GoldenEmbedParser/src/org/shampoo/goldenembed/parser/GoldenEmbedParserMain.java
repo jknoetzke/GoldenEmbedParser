@@ -25,7 +25,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
-import java.util.StringTokenizer;
 
 public class GoldenEmbedParserMain
 {
@@ -844,6 +843,7 @@ public class GoldenEmbedParserMain
 
         gc.setLatitude(gps.getLatitude());
         gc.setLongitude(gps.getLongitude());
+        gc.setSpeed(gps.getSpeed());
 
         gc.setSecs(parseTimeStamp(gps.getTime()));
 
@@ -911,7 +911,12 @@ public class GoldenEmbedParserMain
             mins = Float.parseFloat(strPosition.substring(2, strPosition.length()));
             gps.setLongitude(String.valueOf(Math.abs(degrees)+(mins/60)));
         }
-
+        //Speed
+        position = parseOutGPS(gpsGGA, 6, pos);
+        strPosition = convertBytesToString(position);
+        pos += 6;
+        gps.setSpeed(Double.parseDouble(strPosition));
+        
         //Date
         position = parseOutGPS(gpsGGA, 6, pos);
         strPosition = convertBytesToString(position);

@@ -6,8 +6,17 @@ public class GPS
     private String time;
     private String latitude= "";
     private String longitude = "";
-	
-	public String getTime() {
+	private double speed;
+    
+	public double getSpeed() {
+        return speed;
+    }
+
+    public void setSpeed(double speed) {
+        this.speed = speed;
+    }
+
+    public String getTime() {
 		return time;
 	}
 
