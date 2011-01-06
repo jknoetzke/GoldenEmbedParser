@@ -608,51 +608,48 @@ public class GoldenEmbedParserMain {
         }
 
         pos = (pos + size + 4);
-        // Now Parse GPS
-        gps = GPSHandler(readBytes);
-
-        if (gps == null) {
-            while (readBytes[pos] != MESG_TX_SYNC)
-                pos++;
-            totalErrors++;
-            return pos;
-        }
-
-        gc.setLatitude(gps.getLatitude());
-        gc.setLongitude(gps.getLongitude());
-        gc.setSpeed(gps.getSpeed() * KNOTS_TO_KILOMETERS);
-
-        long secs;
         try {
-            secs = parseTimeStamp(gps.getDate(), gps.getTime());
+
+            // Now Parse GPS
+            gps = GPSHandler(readBytes);
+
+            byte[] timeStamp = new byte[3];
+            timeStamp[0] = readBytes[pos++];
+            timeStamp[1] = readBytes[pos++];
+            timeStamp[2] = readBytes[pos++];
+
+            long secs = parseTimeStamp(gps.getDate(), timeStamp);
+
+            gc.setLatitude(gps.getLatitude());
+            gc.setLongitude(gps.getLongitude());
+            gc.setSpeed(gps.getSpeed() * KNOTS_TO_KILOMETERS);
+            gc.setSecs(secs);
+            gc.setDate(gps.getDate());
+
+            // If we haven't created the file, create it
+            if (outFile == null)
+                initOutFile(gps, filePath, timeStamp);
+            if (gc.getSecs() - gc.getPrevWattsecs() >= 3) {
+                gc.setWatts(0);
+                gc.setCad(0);
+            }
+
+            if (gc.getSecs() != gc.getPrevsecs()) {
+                gc.setWatts((int) Round(
+                        power.getWatts() / power.getTotalWattCounter(), 0));
+                gc.setCad((int) Round(
+                        power.getRpm() / power.getTotalCadCounter(), 0));
+
+                writeGCRecord(gc);
+                gc.newWatts = false;
+            }
         } catch (NumberFormatException e) {
             while (readBytes[pos] != MESG_TX_SYNC)
                 pos++;
             totalErrors++;
             return pos;
         }
-
-        gc.setSecs(secs);
-
-        // If we haven't created the file, create it
-        if (outFile == null)
-            initOutFile(gps, filePath);
-        if (gc.getSecs() - gc.getPrevWattsecs() >= 3) {
-            gc.setWatts(0);
-            gc.setCad(0);
-        }
-
-        if (gc.getSecs() != gc.getPrevsecs()) {
-            gc.setWatts((int) Round(
-                    power.getWatts() / power.getTotalWattCounter(), 0));
-            gc.setCad((int) Round(power.getRpm() / power.getTotalCadCounter(),
-                    0));
-
-            writeGCRecord(gc);
-            gc.newWatts = false;
-
-        }
-        return ++pos;
+        return pos;
     }
 
     private byte[] parseOutGPS(byte[] buf, int length, int pos) {
@@ -665,7 +662,7 @@ public class GoldenEmbedParserMain {
 
     }
 
-    private GPS GPSHandler(byte[] gpsGGA) {
+    private GPS GPSHandler(byte[] gpsGGA) throws NumberFormatException {
         GPS gps = new GPS();
 
         float degrees = 0;
@@ -676,83 +673,74 @@ public class GoldenEmbedParserMain {
 
         pos += 9;
 
-        try {
-
-            if (strPosition.startsWith("0")) {
-                strPosition = strPosition.replaceFirst("0", "-");
-                degrees = Float.parseFloat(strPosition.substring(0, 2));
-                mins = Float.parseFloat(strPosition.substring(2,
-                        strPosition.length()));
-                gps.setLatitude((String.valueOf(-1
-                        * (Math.abs(degrees) + (mins / 60)))));
-            } else {
-                degrees = Float.parseFloat(strPosition.substring(0, 2));
-                mins = Float.parseFloat(strPosition.substring(2,
-                        strPosition.length()));
-                gps.setLatitude(String.valueOf(degrees + (mins / 60)));
-            }
-
-            position = parseOutGPS(gpsGGA, 9, pos);
-            strPosition = convertBytesToString(position);
-            pos += 9;
-
-            if (strPosition.startsWith("0")) {
-                strPosition = strPosition.replaceFirst("0", "-");
-                degrees = Float.parseFloat(strPosition.substring(0, 3));
-                mins = Float.parseFloat(strPosition.substring(3,
-                        strPosition.length()));
-                gps.setLongitude((String.valueOf(-1
-                        * (Math.abs(degrees) + (mins / 60)))));
-            } else {
-                degrees = Float.parseFloat(strPosition.substring(0, 2));
-                mins = Float.parseFloat(strPosition.substring(2,
-                        strPosition.length()));
-                gps.setLongitude(String.valueOf(Math.abs(degrees) + (mins / 60)));
-            }
-            // Speed
-            position = parseOutGPS(gpsGGA, 4, pos);
-            strPosition = convertBytesToString(position);
-            pos += 4;
-
-            gps.setSpeed(Double.parseDouble(strPosition));
-
-            // Date
-            position = parseOutGPS(gpsGGA, 6, pos);
-            strPosition = convertBytesToString(position);
-            pos += 6;
-            gps.setDate(strPosition);
-
-            // Time
-            position = parseOutGPS(gpsGGA, 10, pos);
-            strPosition = convertBytesToString(position);
-            pos += 10;
-            gps.setTime(strPosition);
-
-        } catch (NumberFormatException ex) {
-            return null;
+        if (strPosition.startsWith("0")) {
+            strPosition = strPosition.replaceFirst("0", "-");
+            degrees = Float.parseFloat(strPosition.substring(0, 2));
+            mins = Float.parseFloat(strPosition.substring(2,
+                    strPosition.length()));
+            gps.setLatitude((String.valueOf(-1
+                    * (Math.abs(degrees) + (mins / 60)))));
+        } else {
+            degrees = Float.parseFloat(strPosition.substring(0, 2));
+            mins = Float.parseFloat(strPosition.substring(2,
+                    strPosition.length()));
+            gps.setLatitude(String.valueOf(degrees + (mins / 60)));
         }
+
+        position = parseOutGPS(gpsGGA, 9, pos);
+        strPosition = convertBytesToString(position);
+        pos += 9;
+
+        if (strPosition.startsWith("0")) {
+            strPosition = strPosition.replaceFirst("0", "-");
+            degrees = Float.parseFloat(strPosition.substring(0, 3));
+            mins = Float.parseFloat(strPosition.substring(3,
+                    strPosition.length()));
+            gps.setLongitude((String.valueOf(-1
+                    * (Math.abs(degrees) + (mins / 60)))));
+        } else {
+            degrees = Float.parseFloat(strPosition.substring(0, 2));
+            mins = Float.parseFloat(strPosition.substring(2,
+                    strPosition.length()));
+            gps.setLongitude(String.valueOf(Math.abs(degrees) + (mins / 60)));
+        }
+        // Speed
+        position = parseOutGPS(gpsGGA, 4, pos);
+        strPosition = convertBytesToString(position);
+        pos += 4;
+
+        gps.setSpeed(Double.parseDouble(strPosition));
+
+        // Date
+        position = parseOutGPS(gpsGGA, 6, pos);
+        strPosition = convertBytesToString(position);
+        pos += 6;
+        gps.setDate(strPosition);
 
         return gps;
     }
 
-    private void initOutFile(GPS gps, String filePath) {
+    private void initOutFile(GPS gps, String filePath, byte[] timeStamp) {
         if (outFile == null) {
             String day = formatDate(gps.getDate().substring(0, 2));
             String month = formatDate(gps.getDate().substring(2, 4));
             String year = "20" + gps.getDate().substring(4, 6);
-            String hour = formatDate(gps.getTime().substring(0, 2));
-            String min = formatDate(gps.getTime().substring(3, 4));
-            String sec = formatDate(gps.getTime().substring(4, 6));
+
+            int hr = timeStamp[0];
+            int min = timeStamp[1];
+            int sec = timeStamp[2];
 
             outFile = new File(filePath + "/" + year + "_" + month + "_" + day
-                    + "_" + hour + "_" + min + "_" + sec + ".gc");
+                    + "_" + hr + "_" + min + "_" + sec + ".gc");
 
             System.out.println("Input File: " + outFile.getAbsolutePath());
             System.out.println("GC Formatted File: " + outFile.toString());
 
             try {
                 fout = new PrintWriter(new FileOutputStream(outFile));
-                initGCFile(year, month, day, hour, min, sec);
+                initGCFile(year, month, String.valueOf(day),
+                        String.valueOf(hr), String.valueOf(min),
+                        String.valueOf(sec));
             } catch (FileNotFoundException e1) {
                 e1.printStackTrace();
                 System.exit(1);
@@ -760,13 +748,11 @@ public class GoldenEmbedParserMain {
         }
     }
 
-    private long parseTimeStamp(String strDate, String strTimeStamp)
+    private long parseTimeStamp(String strDate, byte[] timeStamp)
             throws NumberFormatException {
         Calendar cal = new GregorianCalendar();
 
         if (strDate.trim().length() != 6)
-            throw new NumberFormatException();
-        if (strTimeStamp.trim().length() < 6)
             throw new NumberFormatException();
 
         String strDay = strDate.substring(0, 2);
@@ -774,25 +760,27 @@ public class GoldenEmbedParserMain {
         String strYear = strDate.substring(4, 6);
         strYear = "20" + strYear;
 
-        String strHour = strTimeStamp.substring(0, 2);
-        String strMin = strTimeStamp.substring(2, 4);
-        String strSec = strTimeStamp.substring(4, 6);
+        Byte hour;
+        Byte min;
+        Byte sec;
+        int i = 0;
+
+        hour = new Byte(timeStamp[i++]);
+        min = new Byte(timeStamp[i++]);
+        sec = new Byte(timeStamp[i++]);
 
         int year = Integer.parseInt(strYear);
         int day = Integer.parseInt(strDay);
         int month = Integer.parseInt(strMonth);
-        int hour = Integer.parseInt(strHour);
-        int min = Integer.parseInt(strMin);
-        int sec = Integer.parseInt(strSec);
 
         cal.set(year, month, day, hour, min, sec);
 
-        long totalSecs = cal.getTimeInMillis() / 1000;
+        double totalSecs = cal.getTimeInMillis() / 1000.0;
 
         if (firstRecordedTime == 0)
-            firstRecordedTime = totalSecs;
+            firstRecordedTime = Math.round(totalSecs);
 
-        return totalSecs - firstRecordedTime;
+        return Math.round(totalSecs - firstRecordedTime);
     }
 
     public boolean isDouble(String input) {

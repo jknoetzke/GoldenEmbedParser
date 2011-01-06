@@ -18,6 +18,15 @@ public class GoldenCheetah {
     private String longitude;
     private int hr;
     private int len;
+    private String date;
+
+    public String getDate() {
+        return date;
+    }
+
+    public void setDate(String date) {
+        this.date = date;
+    }
 
     public int getLen() {
         return len;
