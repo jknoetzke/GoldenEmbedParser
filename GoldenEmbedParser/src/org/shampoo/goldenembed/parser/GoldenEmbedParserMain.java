@@ -25,6 +25,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
 
 public class GoldenEmbedParserMain {
     static final byte MESG_RESPONSE_EVENT_ID = 0x40;
@@ -44,6 +46,9 @@ public class GoldenEmbedParserMain {
     static final double KNOTS_TO_KILOMETERS = 1.85200;
 
     File outFile = null;
+
+    boolean isFirstRecordedTime = true;
+    long firstRecordedTime = 0;
 
     float totalTrans = 0;
     float totalErrors = 0;
@@ -617,7 +622,17 @@ public class GoldenEmbedParserMain {
         gc.setLongitude(gps.getLongitude());
         gc.setSpeed(gps.getSpeed() * KNOTS_TO_KILOMETERS);
 
-        gc.setSecs(parseTimeStamp(gps.getTime()));
+        long secs;
+        try {
+            secs = parseTimeStamp(gps.getDate(), gps.getTime());
+        } catch (NumberFormatException e) {
+            while (readBytes[pos] != MESG_TX_SYNC)
+                pos++;
+            totalErrors++;
+            return pos;
+        }
+
+        gc.setSecs(secs);
 
         // If we haven't created the file, create it
         if (outFile == null)
@@ -745,18 +760,39 @@ public class GoldenEmbedParserMain {
         }
     }
 
-    private int parseTimeStamp(String strTimeStamp) {
+    private long parseTimeStamp(String strDate, String strTimeStamp)
+            throws NumberFormatException {
+        Calendar cal = new GregorianCalendar();
+
+        if (strDate.trim().length() != 6)
+            throw new NumberFormatException();
         if (strTimeStamp.trim().length() < 6)
-            return 0;
-        String hour = strTimeStamp.substring(0, 2);
-        String min = strTimeStamp.substring(2, 4);
-        String sec = strTimeStamp.substring(4, 6);
-        try {
-            return (Integer.parseInt(hour) * 60 * 60)
-                    + (Integer.parseInt(min) * 60) + Integer.parseInt(sec);
-        } catch (NumberFormatException e) {
-            return 0;
-        }
+            throw new NumberFormatException();
+
+        String strDay = strDate.substring(0, 2);
+        String strMonth = strDate.substring(2, 4);
+        String strYear = strDate.substring(4, 6);
+        strYear = "20" + strYear;
+
+        String strHour = strTimeStamp.substring(0, 2);
+        String strMin = strTimeStamp.substring(2, 4);
+        String strSec = strTimeStamp.substring(4, 6);
+
+        int year = Integer.parseInt(strYear);
+        int day = Integer.parseInt(strDay);
+        int month = Integer.parseInt(strMonth);
+        int hour = Integer.parseInt(strHour);
+        int min = Integer.parseInt(strMin);
+        int sec = Integer.parseInt(strSec);
+
+        cal.set(year, month, day, hour, min, sec);
+
+        long totalSecs = cal.getTimeInMillis() / 1000;
+
+        if (firstRecordedTime == 0)
+            firstRecordedTime = totalSecs;
+
+        return totalSecs - firstRecordedTime;
     }
 
     public boolean isDouble(String input) {
