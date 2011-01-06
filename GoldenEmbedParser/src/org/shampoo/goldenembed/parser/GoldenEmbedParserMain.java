@@ -609,6 +609,7 @@ public class GoldenEmbedParserMain {
         if (gps == null) {
             while (readBytes[pos] != MESG_TX_SYNC)
                 pos++;
+            totalErrors++;
             return pos;
         }
 
