@@ -47,7 +47,6 @@ public class GoldenEmbedParserMain {
 
     float totalTrans = 0;
     float totalErrors = 0;
-    boolean errorFlag = false;
     long totalSpikes = 0;
     boolean noGSC = false;
     int startTime = 0;
@@ -418,6 +417,7 @@ public class GoldenEmbedParserMain {
         int i;
         int size = 0;
         boolean inMsg = true;
+        boolean errorFlag = true;
 
         for (i = 0; i < rxBuf.length; i++) {
             if (rxBuf[i] == MESG_TX_SYNC && inMsg) {
@@ -441,6 +441,7 @@ public class GoldenEmbedParserMain {
                     // Handle Message
                     ANTrxMsg(rxBuf, size, gc);
                     msgN++;
+                    break;
                 } else {
                     if (megaDebug)
                         System.out.println("CheckSum Mismatch 0x"
@@ -449,10 +450,9 @@ public class GoldenEmbedParserMain {
                                 + UnicodeFormatter.byteToHex(checksum));
                     msgN = 0;
                     inMsg = true;
-                    if (errorFlag == false) {
-                        totalErrors++;
-                        errorFlag = true;
-                    }
+                    totalErrors++;
+                    errorFlag = true;
+                    return errorFlag;
                 }
             } else
                 return errorFlag;
@@ -606,6 +606,12 @@ public class GoldenEmbedParserMain {
         // Now Parse GPS
         gps = GPSHandler(readBytes);
 
+        if (gps == null) {
+            while (readBytes[pos] != MESG_TX_SYNC)
+                pos++;
+            return pos;
+        }
+
         gc.setLatitude(gps.getLatitude());
         gc.setLongitude(gps.getLongitude());
         gc.setSpeed(gps.getSpeed() * KNOTS_TO_KILOMETERS);
@@ -654,54 +660,61 @@ public class GoldenEmbedParserMain {
 
         pos += 9;
 
-        if (strPosition.startsWith("0")) {
-            strPosition = strPosition.replaceFirst("0", "-");
-            degrees = Float.parseFloat(strPosition.substring(0, 2));
-            mins = Float.parseFloat(strPosition.substring(2,
-                    strPosition.length()));
-            gps.setLatitude((String.valueOf(-1
-                    * (Math.abs(degrees) + (mins / 60)))));
-        } else {
-            degrees = Float.parseFloat(strPosition.substring(0, 2));
-            mins = Float.parseFloat(strPosition.substring(2,
-                    strPosition.length()));
-            gps.setLatitude(String.valueOf(degrees + (mins / 60)));
+        try {
+
+            if (strPosition.startsWith("0")) {
+                strPosition = strPosition.replaceFirst("0", "-");
+                degrees = Float.parseFloat(strPosition.substring(0, 2));
+                mins = Float.parseFloat(strPosition.substring(2,
+                        strPosition.length()));
+                gps.setLatitude((String.valueOf(-1
+                        * (Math.abs(degrees) + (mins / 60)))));
+            } else {
+                degrees = Float.parseFloat(strPosition.substring(0, 2));
+                mins = Float.parseFloat(strPosition.substring(2,
+                        strPosition.length()));
+                gps.setLatitude(String.valueOf(degrees + (mins / 60)));
+            }
+
+            position = parseOutGPS(gpsGGA, 9, pos);
+            strPosition = convertBytesToString(position);
+            pos += 9;
+
+            if (strPosition.startsWith("0")) {
+                strPosition = strPosition.replaceFirst("0", "-");
+                degrees = Float.parseFloat(strPosition.substring(0, 3));
+                mins = Float.parseFloat(strPosition.substring(3,
+                        strPosition.length()));
+                gps.setLongitude((String.valueOf(-1
+                        * (Math.abs(degrees) + (mins / 60)))));
+            } else {
+                degrees = Float.parseFloat(strPosition.substring(0, 2));
+                mins = Float.parseFloat(strPosition.substring(2,
+                        strPosition.length()));
+                gps.setLongitude(String.valueOf(Math.abs(degrees) + (mins / 60)));
+            }
+            // Speed
+            position = parseOutGPS(gpsGGA, 4, pos);
+            strPosition = convertBytesToString(position);
+            pos += 4;
+
+            gps.setSpeed(Double.parseDouble(strPosition));
+
+            // Date
+            position = parseOutGPS(gpsGGA, 6, pos);
+            strPosition = convertBytesToString(position);
+            pos += 6;
+            gps.setDate(strPosition);
+
+            // Time
+            position = parseOutGPS(gpsGGA, 10, pos);
+            strPosition = convertBytesToString(position);
+            pos += 10;
+            gps.setTime(strPosition);
+
+        } catch (NumberFormatException ex) {
+            return null;
         }
-
-        position = parseOutGPS(gpsGGA, 9, pos);
-        strPosition = convertBytesToString(position);
-        pos += 9;
-
-        if (strPosition.startsWith("0")) {
-            strPosition = strPosition.replaceFirst("0", "-");
-            degrees = Float.parseFloat(strPosition.substring(0, 3));
-            mins = Float.parseFloat(strPosition.substring(3,
-                    strPosition.length()));
-            gps.setLongitude((String.valueOf(-1
-                    * (Math.abs(degrees) + (mins / 60)))));
-        } else {
-            degrees = Float.parseFloat(strPosition.substring(0, 2));
-            mins = Float.parseFloat(strPosition.substring(2,
-                    strPosition.length()));
-            gps.setLongitude(String.valueOf(Math.abs(degrees) + (mins / 60)));
-        }
-        // Speed
-        position = parseOutGPS(gpsGGA, 4, pos);
-        strPosition = convertBytesToString(position);
-        pos += 4;
-        gps.setSpeed(Double.parseDouble(strPosition));
-
-        // Date
-        position = parseOutGPS(gpsGGA, 6, pos);
-        strPosition = convertBytesToString(position);
-        pos += 6;
-        gps.setDate(strPosition);
-
-        // Time
-        position = parseOutGPS(gpsGGA, 10, pos);
-        strPosition = convertBytesToString(position);
-        pos += 10;
-        gps.setTime(strPosition);
 
         return gps;
     }
