@@ -84,21 +84,24 @@ public class GoldenEmbedParserMain {
         power = new Power();
     }
 
-    private void initGCFile(String year, String month, String day, String hour,
-            String minute, String second) {
+    private void initGCFile(int year, int month, int day, int hour, int minute,
+            int second) {
         fout.write("<!DOCTYPE GoldenCheetah>\n");
         fout.write("<ride>\n");
         fout.write(spacer1 + "<attributes>\n");
-        fout.write(spacer2 + "<attribute key=\"Start time\" value=\"" + year
-                + "/" + month + "/" + day + " " + hour + ":" + minute + ":"
-                + second + " UTC\" />\n");
+        fout.write(spacer2 + "<attribute key=\"Start time\" value=\"" + "20"
+                + formatDate(year) + "/" + formatDate(month) + "/"
+                + formatDate(day) + " " + formatDate(hour) + ":"
+                + formatDate(minute) + ":" + formatDate(second) + " UTC\" />\n");
         fout.write(spacer2
                 + "<attribute key=\"Device type\" value=\"Golden Embed GPS\" />\n");
         fout.write(spacer1 + "</attributes>\n");
         fout.write("<samples>\n");
     }
 
-    private String formatDate(String toFormat) {
+    private String formatDate(int _toFormat) {
+
+        String toFormat = String.valueOf(_toFormat);
         if (toFormat.length() < 2)
             toFormat = "0" + toFormat;
 
@@ -613,12 +616,12 @@ public class GoldenEmbedParserMain {
             // Now Parse GPS
             gps = GPSHandler(readBytes);
 
-            byte[] timeStamp = new byte[3];
-            timeStamp[0] = readBytes[pos++];
-            timeStamp[1] = readBytes[pos++];
-            timeStamp[2] = readBytes[pos++];
+            byte[] timeStamp = new byte[6];
 
-            long secs = parseTimeStamp(gps.getDate(), timeStamp);
+            for (int i = 0; i < 6; i++)
+                timeStamp[i] = readBytes[pos++];
+
+            long secs = parseTimeStamp(timeStamp);
 
             gc.setLatitude(gps.getLatitude());
             gc.setLongitude(gps.getLongitude());
@@ -711,36 +714,31 @@ public class GoldenEmbedParserMain {
 
         gps.setSpeed(Double.parseDouble(strPosition));
 
-        // Date
-        position = parseOutGPS(gpsGGA, 6, pos);
-        strPosition = convertBytesToString(position);
-        pos += 6;
-        gps.setDate(strPosition);
-
         return gps;
     }
 
     private void initOutFile(GPS gps, String filePath, byte[] timeStamp) {
         if (outFile == null) {
-            String day = formatDate(gps.getDate().substring(0, 2));
-            String month = formatDate(gps.getDate().substring(2, 4));
-            String year = "20" + gps.getDate().substring(4, 6);
 
-            int hr = timeStamp[0];
-            int min = timeStamp[1];
-            int sec = timeStamp[2];
+            int year = timeStamp[0];
+            int month = timeStamp[1];
+            int day = timeStamp[2];
 
-            outFile = new File(filePath + "/" + year + "_" + month + "_" + day
-                    + "_" + hr + "_" + min + "_" + sec + ".gc");
+            int hr = timeStamp[3];
+            int min = timeStamp[4];
+            int sec = timeStamp[5];
+
+            outFile = new File(filePath + "/" + "20" + formatDate(year) + "_"
+                    + formatDate(month) + "_" + formatDate(day) + "_"
+                    + formatDate(hr) + "_" + formatDate(min) + "_"
+                    + formatDate(sec) + ".gc");
 
             System.out.println("Input File: " + outFile.getAbsolutePath());
             System.out.println("GC Formatted File: " + outFile.toString());
 
             try {
                 fout = new PrintWriter(new FileOutputStream(outFile));
-                initGCFile(year, month, String.valueOf(day),
-                        String.valueOf(hr), String.valueOf(min),
-                        String.valueOf(sec));
+                initGCFile(year, month, day, hr, min, sec);
             } catch (FileNotFoundException e1) {
                 e1.printStackTrace();
                 System.exit(1);
@@ -748,39 +746,34 @@ public class GoldenEmbedParserMain {
         }
     }
 
-    private long parseTimeStamp(String strDate, byte[] timeStamp)
-            throws NumberFormatException {
+    private long parseTimeStamp(byte[] timeStamp) throws NumberFormatException {
         Calendar cal = new GregorianCalendar();
 
-        if (strDate.trim().length() != 6)
-            throw new NumberFormatException();
-
-        String strDay = strDate.substring(0, 2);
-        String strMonth = strDate.substring(2, 4);
-        String strYear = strDate.substring(4, 6);
-        strYear = "20" + strYear;
+        Byte year;
+        Byte month;
+        Byte day;
 
         Byte hour;
         Byte min;
         Byte sec;
         int i = 0;
 
+        year = new Byte(timeStamp[i++]);
+        month = new Byte(timeStamp[i++]);
+        day = new Byte(timeStamp[i++]);
+
         hour = new Byte(timeStamp[i++]);
         min = new Byte(timeStamp[i++]);
         sec = new Byte(timeStamp[i++]);
 
-        int year = Integer.parseInt(strYear);
-        int day = Integer.parseInt(strDay);
-        int month = Integer.parseInt(strMonth);
-
         cal.set(year, month, day, hour, min, sec);
 
-        double totalSecs = cal.getTimeInMillis() / 1000.0;
+        long totalSecs = cal.getTimeInMillis() / 1000;
 
         if (firstRecordedTime == 0)
-            firstRecordedTime = Math.round(totalSecs);
+            firstRecordedTime = totalSecs;
 
-        return Math.round(totalSecs - firstRecordedTime);
+        return totalSecs - firstRecordedTime;
     }
 
     public boolean isDouble(String input) {
