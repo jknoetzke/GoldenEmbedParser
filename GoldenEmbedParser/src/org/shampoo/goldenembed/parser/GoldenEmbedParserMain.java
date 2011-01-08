@@ -643,6 +643,11 @@ public class GoldenEmbedParserMain {
                 gc.setCad((int) Round(
                         power.getRpm() / power.getTotalCadCounter(), 0));
 
+                gc.setDistance(gc.getDistance()
+                        + (gc.getSpeed()
+                                * (gc.getSecs() - gc.getPrevSpeedSecs()) / 3600.0));
+                gc.setPrevSpeedSecs(gc.getSecs());
+
                 writeGCRecord(gc);
                 gc.newWatts = false;
             }
