@@ -27,6 +27,7 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
+import java.util.TimeZone;
 
 public class GoldenEmbedParserMain {
     static final byte MESG_RESPONSE_EVENT_ID = 0x40;
@@ -733,10 +734,22 @@ public class GoldenEmbedParserMain {
             int min = timeStamp[4];
             int sec = timeStamp[5];
 
-            outFile = new File(filePath + "/" + "20" + formatDate(year) + "_"
-                    + formatDate(month) + "_" + formatDate(day) + "_"
-                    + formatDate(hr) + "_" + formatDate(min) + "_"
-                    + formatDate(sec) + ".gc");
+            Calendar rideCal = new GregorianCalendar(
+                    TimeZone.getTimeZone("UTC"));
+            rideCal.set(year, month, day, hr, min, sec);
+            System.out.println(rideCal.get(Calendar.HOUR));
+
+            Calendar localTime = new GregorianCalendar();
+            localTime.setTimeInMillis(rideCal.getTimeInMillis());
+
+            System.out.println(localTime.get(Calendar.HOUR));
+            outFile = new File(filePath + "/" + "20"
+                    + formatDate(localTime.get(Calendar.YEAR)) + "_"
+                    + formatDate(localTime.get(Calendar.MONTH)) + "_"
+                    + formatDate(localTime.get(Calendar.DATE)) + "_"
+                    + formatDate(localTime.get(Calendar.HOUR_OF_DAY)) + "_"
+                    + formatDate(localTime.get(Calendar.MINUTE)) + "_"
+                    + formatDate(localTime.get(Calendar.SECOND)) + ".gc");
 
             System.out.println("Input File: " + outFile.getAbsolutePath());
             System.out.println("GC Formatted File: " + outFile.toString());
