@@ -718,7 +718,10 @@ public class GoldenEmbedParserMain {
         strPosition = convertBytesToString(position);
         pos += 4;
 
-        gps.setSpeed(Double.parseDouble(strPosition));
+        if (strPosition.trim().length() != 0)
+            gps.setSpeed(Double.parseDouble(strPosition));
+        else
+            gps.setSpeed(0.0);
 
         return gps;
     }
@@ -737,12 +740,10 @@ public class GoldenEmbedParserMain {
             Calendar rideCal = new GregorianCalendar(
                     TimeZone.getTimeZone("UTC"));
             rideCal.set(year, month, day, hr, min, sec);
-            System.out.println(rideCal.get(Calendar.HOUR));
 
             Calendar localTime = new GregorianCalendar();
             localTime.setTimeInMillis(rideCal.getTimeInMillis());
 
-            System.out.println(localTime.get(Calendar.HOUR));
             outFile = new File(filePath + "/" + "20"
                     + formatDate(localTime.get(Calendar.YEAR)) + "_"
                     + formatDate(localTime.get(Calendar.MONTH)) + "_"
