@@ -25,8 +25,12 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.GregorianCalendar;
+import java.util.Iterator;
+import java.util.List;
 import java.util.TimeZone;
 
 public class GoldenEmbedParserMain {
@@ -48,6 +52,8 @@ public class GoldenEmbedParserMain {
 
     File outFile = null;
 
+    long lastWattSecs = 0; // To keep track of the last time watts were saved.
+
     boolean isFirstRecordedTime = true;
     long firstRecordedTime = 0;
 
@@ -59,6 +65,8 @@ public class GoldenEmbedParserMain {
 
     private static final String spacer1 = "    ";
     private static final String spacer2 = "        ";
+
+    List<GoldenCheetah> gcArray = new ArrayList<GoldenCheetah>();
 
     Power power;
     SpeedCad speedCad;
@@ -142,6 +150,7 @@ public class GoldenEmbedParserMain {
             System.out.println("% Failure: " + (totalErrors / totalTrans)
                     * 100.0);
             System.out.println("Total CAD or Watt Spikes: " + totalSpikes);
+            writeOutGCRecords();
             closeGCFile();
             System.exit(0);
 
@@ -406,8 +415,8 @@ public class GoldenEmbedParserMain {
                 double cadCounter = power.getTotalCadCounter();
                 power.setTotalWattCounter(wattCounter + 1);
                 power.setTotalCadCounter(cadCounter + 1);
-                gc.setPrevWattsecs(gc.getSecs());
-                gc.setPrevCadSecs(gc.getSecs());
+
+                flushPowerArray(gc);
 
             } else {
                 if (debug)
@@ -594,6 +603,7 @@ public class GoldenEmbedParserMain {
             System.out.println("% Failure: " + (totalErrors / totalTrans)
                     * 100.0);
             System.out.println("Total CAD or Watt Spikes: " + totalSpikes);
+            writeOutGCRecords();
             closeGCFile();
             System.exit(0);
         }
@@ -627,29 +637,29 @@ public class GoldenEmbedParserMain {
             gc.setLatitude(gps.getLatitude());
             gc.setLongitude(gps.getLongitude());
             gc.setSpeed(gps.getSpeed() * KNOTS_TO_KILOMETERS);
+            gc.setDistance(gc.getDistance()
+                    + (gc.getSpeed() * (gc.getSecs() - gc.getPrevSpeedSecs()) / 3600.0));
+            gc.setPrevSpeedSecs(gc.getSecs());
             gc.setSecs(secs);
             gc.setDate(gps.getDate());
 
             // If we haven't created the file, create it
             if (outFile == null)
                 initOutFile(gps, filePath, timeStamp);
-            if (gc.getSecs() - gc.getPrevWattsecs() >= 3) {
+            if (gc.getSecs() - gc.getPrevWattsecs() >= 5) {
                 gc.setWatts(0);
                 gc.setCad(0);
             }
 
-            if (gc.getSecs() != gc.getPrevsecs()) {
+            if (gc.getPrevsecs() != gc.getSecs()) {
                 gc.setWatts((int) Round(
                         power.getWatts() / power.getTotalWattCounter(), 0));
                 gc.setCad((int) Round(
                         power.getRpm() / power.getTotalCadCounter(), 0));
 
-                gc.setDistance(gc.getDistance()
-                        + (gc.getSpeed()
-                                * (gc.getSecs() - gc.getPrevSpeedSecs()) / 3600.0));
-                gc.setPrevSpeedSecs(gc.getSecs());
-
-                writeGCRecord(gc);
+                GoldenCheetah _gc = gc.clone(gc);
+                gcArray.add(_gc);
+                gc.setPrevsecs(gc.getSecs());
                 gc.newWatts = false;
             }
         } catch (NumberFormatException e) {
@@ -718,7 +728,10 @@ public class GoldenEmbedParserMain {
         strPosition = convertBytesToString(position);
         pos += 4;
 
-        gps.setSpeed(Double.parseDouble(strPosition));
+        if (strPosition.trim().length() != 0)
+            gps.setSpeed(Double.parseDouble(strPosition));
+        else
+            gps.setSpeed(0.0);
 
         return gps;
     }
@@ -737,12 +750,10 @@ public class GoldenEmbedParserMain {
             Calendar rideCal = new GregorianCalendar(
                     TimeZone.getTimeZone("UTC"));
             rideCal.set(year, month, day, hr, min, sec);
-            System.out.println(rideCal.get(Calendar.HOUR));
 
             Calendar localTime = new GregorianCalendar();
             localTime.setTimeInMillis(rideCal.getTimeInMillis());
 
-            System.out.println(localTime.get(Calendar.HOUR));
             outFile = new File(filePath + "/" + "20"
                     + formatDate(localTime.get(Calendar.YEAR)) + "_"
                     + formatDate(localTime.get(Calendar.MONTH)) + "_"
@@ -802,4 +813,72 @@ public class GoldenEmbedParserMain {
             return false;
         }
     }
+
+    private void flushPowerArray(GoldenCheetah gc) {
+        GoldenCheetah _gc;
+        // Now create GC file records for the missing messages.
+
+        if (gcArray.size() == 0)
+            return;
+        long startSecs = lastWattSecs;
+        long endSecs = gc.getSecs(); // The next time we are about to save.
+        long diffSecs = endSecs - startSecs;
+        long watts = 0;
+        long cad = 0;
+
+        if (diffSecs >= 5) // Let's no be ridiculous.
+        {
+            watts = 0;
+            cad = 0;
+        } else if (diffSecs != 0) {
+            watts = gc.getWatts() / diffSecs;
+            cad = gc.getCad() / diffSecs;
+        } else {
+            watts = gc.getWatts();
+            cad = gc.getCad();
+        }
+        for (long x = startSecs; x < endSecs; x++) {
+            _gc = findGCByTime(x); // Do we already have a GC record for this
+                                   // time ?
+            if (_gc != null) {
+                GoldenCheetah tmpGC = new GoldenCheetah();
+                tmpGC = _gc.clone(_gc);
+                tmpGC.setCad(cad);
+                tmpGC.setWatts(watts);
+                gcArray.set(gcArray.indexOf(_gc), tmpGC);
+            } else {
+                _gc = new GoldenCheetah();
+                _gc = _gc.clone(gc);
+                _gc.setSecs(x);
+                _gc.setWatts(watts);
+                _gc.setCad(cad);
+                gcArray.add(_gc);
+            }
+        }
+        lastWattSecs = endSecs + 1;
+
+    }
+
+    private void writeOutGCRecords() {
+        Iterator<GoldenCheetah> iter = gcArray.iterator();
+        Collections.sort(gcArray, new SortBySeconds());
+
+        while (iter.hasNext()) {
+            GoldenCheetah _gc = (GoldenCheetah) iter.next();
+            writeGCRecord(_gc);
+        }
+    }
+
+    private GoldenCheetah findGCByTime(long secs) {
+        Iterator<GoldenCheetah> iter = gcArray.iterator();
+        GoldenCheetah _gc;
+        while (iter.hasNext()) {
+            _gc = iter.next();
+            if (_gc.getSecs() == secs)
+                return _gc;
+        }
+
+        return null;
+    }
+
 }
