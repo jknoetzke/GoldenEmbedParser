@@ -638,7 +638,7 @@ public class GoldenEmbedParserMain {
             gc.setLongitude(gps.getLongitude());
             gc.setSpeed(gps.getSpeed() * KNOTS_TO_KILOMETERS);
             gc.setDistance(gc.getDistance()
-                    + (gc.getSpeed() * (gc.getSecs() - gc.getPrevSpeedSecs()) / 3600.0));
+                    + (gc.getSpeed() * (secs - gc.getPrevSpeedSecs()) / 3600.0));
             gc.setPrevSpeedSecs(gc.getSecs());
             gc.setSecs(secs);
             gc.setDate(gps.getDate());
