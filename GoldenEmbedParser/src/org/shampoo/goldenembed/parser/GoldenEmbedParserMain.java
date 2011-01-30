@@ -662,7 +662,6 @@ public class GoldenEmbedParserMain {
                         power.getWatts() / power.getTotalWattCounter(), 0));
                 gc.setCad((int) Round(
                         power.getRpm() / power.getTotalCadCounter(), 0));
-
                 if (gc.getSecs() % 10 == 0) {
                     // Get the elevation from Google every 10 seconds. (Max 2500
                     // calls per day)
@@ -672,7 +671,6 @@ public class GoldenEmbedParserMain {
                 }
 
                 gc.setElevation(elevation);
-
                 GoldenCheetah _gc = gc.clone(gc);
                 gcArray.add(_gc);
                 gc.setPrevsecs(gc.getSecs());
