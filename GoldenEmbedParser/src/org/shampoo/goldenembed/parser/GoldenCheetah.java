@@ -4,7 +4,7 @@ public class GoldenCheetah {
     // <sample cad="0" watts="0" secs="0" hr="92" len="1" />
 
     private long cad;
-    private int watts;
+    private long watts;
     private long secs;
     private long prevsecs;
     private long prevWattsecs;
@@ -19,6 +19,15 @@ public class GoldenCheetah {
     private int hr;
     private int len;
     private String date;
+    private float elevation;
+
+    public float getElevation() {
+        return elevation;
+    }
+
+    public void setElevation(float elevation) {
+        this.elevation = elevation;
+    }
 
     public String getDate() {
         return date;
@@ -52,11 +61,11 @@ public class GoldenCheetah {
         this.cad = cad;
     }
 
-    public int getWatts() {
+    public long getWatts() {
         return watts;
     }
 
-    public void setWatts(int watts) {
+    public void setWatts(long watts) {
         this.watts = watts;
     }
 
@@ -154,6 +163,9 @@ public class GoldenCheetah {
         gc.setSecs(_gc.getSecs());
         gc.setSpeed(_gc.getSpeed());
         gc.setWatts(_gc.getWatts());
+        gc.setLatitude(_gc.getLatitude());
+        gc.setLongitude(_gc.getLongitude());
+        gc.setElevation(_gc.getElevation());
 
         return gc;
     }
