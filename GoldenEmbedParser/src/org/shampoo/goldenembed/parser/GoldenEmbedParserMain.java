@@ -662,15 +662,6 @@ public class GoldenEmbedParserMain {
                         power.getWatts() / power.getTotalWattCounter(), 0));
                 gc.setCad((int) Round(
                         power.getRpm() / power.getTotalCadCounter(), 0));
-                if (gc.getSecs() % 10 == 0) {
-                    // Get the elevation from Google every 10 seconds. (Max 2500
-                    // calls per day)
-                    elevation = googleElevation.getElevation(
-                            new Float(gc.getLatitude()),
-                            new Float(gc.getLongitude()));
-                }
-
-                gc.setElevation(elevation);
                 GoldenCheetah _gc = gc.clone(gc);
                 gcArray.add(_gc);
                 gc.setPrevsecs(gc.getSecs());
@@ -882,13 +873,17 @@ public class GoldenEmbedParserMain {
     }
 
     private void writeOutGCRecords() {
-        Iterator<GoldenCheetah> iter = gcArray.iterator();
         Collections.sort(gcArray, new SortBySeconds());
 
-        while (iter.hasNext()) {
-            GoldenCheetah _gc = (GoldenCheetah) iter.next();
+        System.out.println("Getting Elevation...");
+        List<GoldenCheetah> gcElevationArray = googleElevation
+                .getGCElevations(gcArray);
+        Iterator<GoldenCheetah> iterElevation = gcElevationArray.iterator();
+        while (iterElevation.hasNext()) {
+            GoldenCheetah _gc = (GoldenCheetah) iterElevation.next();
             writeGCRecord(_gc);
         }
+        System.out.println("Finished");
     }
 
     private GoldenCheetah findGCByTime(long secs) {
