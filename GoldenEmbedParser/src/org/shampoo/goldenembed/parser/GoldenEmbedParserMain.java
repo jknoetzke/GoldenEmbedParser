@@ -25,6 +25,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
@@ -67,7 +68,6 @@ public class GoldenEmbedParserMain {
 
     private static final String spacer1 = "    ";
     private static final String spacer2 = "        ";
-    private float elevation = 0;
 
     List<GoldenCheetah> gcArray = new ArrayList<GoldenCheetah>();
 
@@ -118,7 +118,6 @@ public class GoldenEmbedParserMain {
         String toFormat = String.valueOf(_toFormat);
         if (toFormat.length() < 2)
             toFormat = "0" + toFormat;
-
         return toFormat;
 
     }
@@ -752,8 +751,10 @@ public class GoldenEmbedParserMain {
     private void initOutFile(GPS gps, String filePath, byte[] timeStamp) {
         if (outFile == null) {
 
-            int year = timeStamp[0];
+            String strYear = "20" + timeStamp[0];
+            int year = Integer.valueOf(strYear);
             int month = timeStamp[1];
+            month--; // Zero based
             int day = timeStamp[2];
 
             int hr = timeStamp[3];
@@ -764,16 +765,10 @@ public class GoldenEmbedParserMain {
                     TimeZone.getTimeZone("UTC"));
             rideCal.set(year, month, day, hr, min, sec);
 
-            Calendar localTime = new GregorianCalendar();
-            localTime.setTimeInMillis(rideCal.getTimeInMillis());
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy_MM_dd_hh_mm_ss");
 
-            outFile = new File(filePath + "/" + "20"
-                    + formatDate(localTime.get(Calendar.YEAR)) + "_"
-                    + formatDate(localTime.get(Calendar.MONTH)) + "_"
-                    + formatDate(localTime.get(Calendar.DATE)) + "_"
-                    + formatDate(localTime.get(Calendar.HOUR_OF_DAY)) + "_"
-                    + formatDate(localTime.get(Calendar.MINUTE)) + "_"
-                    + formatDate(localTime.get(Calendar.SECOND)) + ".gc");
+            outFile = new File(filePath + "/" + sdf.format(rideCal.getTime())
+                    + ".gc");
 
             System.out.println("Input File: " + outFile.getAbsolutePath());
             System.out.println("GC Formatted File: " + outFile.toString());
