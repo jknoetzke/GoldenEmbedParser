@@ -17,6 +17,11 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.FileHandler;
+import java.util.logging.Level;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
+import java.util.logging.XMLFormatter;
 
 import org.shampoo.goldenembed.parser.GoldenCheetah;
 import org.shampoo.goldenembed.tools.Wait;
@@ -25,11 +30,32 @@ public class GoogleElevation {
 
 	private Map<Location, Float> elevations = new HashMap<Location, Float>();
 
+	LogManager lm = LogManager.getLogManager();
+	Logger logger = null;
+	String serElevations;
+
 	public Map<Location, Float> getElevations() {
 		return elevations;
 	}
 
-	public GoogleElevation() {
+	public GoogleElevation(String serElevations) {
+		this.serElevations = serElevations;
+
+		try {
+			FileHandler fh = new FileHandler("geparser.log");
+			fh.setFormatter(new XMLFormatter());
+			logger = Logger.getLogger("GoogleElevation");
+
+			logger.addHandler(fh);
+
+			lm.addLogger(logger);
+			logger.setLevel(Level.INFO);
+		} catch (SecurityException e) {
+
+			logger.log(Level.SEVERE, e.toString());
+		} catch (IOException e) {
+			logger.log(Level.SEVERE, e.toString());
+		}
 
 	}
 
@@ -64,7 +90,7 @@ public class GoogleElevation {
 			return resultList;
 
 		} catch (GeocodeException ex) {
-			ex.printStackTrace();
+			logger.log(Level.SEVERE, ex.toString());
 		}
 
 		return null;
@@ -137,16 +163,15 @@ public class GoogleElevation {
 	public void serializeElevations() {
 		FileOutputStream fos;
 		try {
-			fos = new FileOutputStream("elevations.ser");
+			// TODO Have the location of this as a startup var
+			fos = new FileOutputStream(serElevations);
 			ObjectOutputStream oos = new ObjectOutputStream(fos);
 			oos.writeObject(elevations);
 			oos.close();
 		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.log(Level.SEVERE, e.toString());
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.log(Level.SEVERE, e.toString());
 		}
 
 	}
@@ -155,7 +180,7 @@ public class GoogleElevation {
 
 		FileInputStream fis;
 		try {
-			fis = new FileInputStream("elevations.ser");
+			fis = new FileInputStream(serElevations);
 			ObjectInputStream ois = new ObjectInputStream(fis);
 			elevations = (HashMap<Location, Float>) ois.readObject();
 			ois.close();
@@ -163,14 +188,11 @@ public class GoogleElevation {
 			return elevations;
 
 		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.log(Level.SEVERE, e.toString());
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.log(Level.SEVERE, e.toString());
 		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.log(Level.SEVERE, e.toString());
 		}
 
 		return null;
