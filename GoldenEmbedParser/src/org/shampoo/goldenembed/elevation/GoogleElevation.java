@@ -17,11 +17,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.FileHandler;
 import java.util.logging.Level;
-import java.util.logging.LogManager;
 import java.util.logging.Logger;
-import java.util.logging.XMLFormatter;
 
 import org.shampoo.goldenembed.parser.GoldenCheetah;
 import org.shampoo.goldenembed.tools.Wait;
@@ -30,7 +27,6 @@ public class GoogleElevation {
 
 	private Map<Location, Float> elevations = new HashMap<Location, Float>();
 
-	LogManager lm = LogManager.getLogManager();
 	Logger logger = null;
 	String serElevations;
 
@@ -38,25 +34,9 @@ public class GoogleElevation {
 		return elevations;
 	}
 
-	public GoogleElevation(String serElevations) {
+	public GoogleElevation(String serElevations, Logger logger) {
 		this.serElevations = serElevations;
-
-		try {
-			FileHandler fh = new FileHandler("geparser.log");
-			fh.setFormatter(new XMLFormatter());
-			logger = Logger.getLogger("GoogleElevation");
-
-			logger.addHandler(fh);
-
-			lm.addLogger(logger);
-			logger.setLevel(Level.INFO);
-		} catch (SecurityException e) {
-
-			logger.log(Level.SEVERE, e.toString());
-		} catch (IOException e) {
-			logger.log(Level.SEVERE, e.toString());
-		}
-
+		this.logger = logger;
 	}
 
 	public float getElevation(Float lat, Float lon) {
@@ -73,7 +53,7 @@ public class GoogleElevation {
 				elevations.put(location, elevation);
 				return elevation;
 			} catch (GeocodeException ex) {
-				ex.printStackTrace();
+				logger.log(Level.SEVERE, ex.toString());
 				return 0;
 			}
 		} else
@@ -163,7 +143,6 @@ public class GoogleElevation {
 	public void serializeElevations() {
 		FileOutputStream fos;
 		try {
-			// TODO Have the location of this as a startup var
 			fos = new FileOutputStream(serElevations);
 			ObjectOutputStream oos = new ObjectOutputStream(fos);
 			oos.writeObject(elevations);

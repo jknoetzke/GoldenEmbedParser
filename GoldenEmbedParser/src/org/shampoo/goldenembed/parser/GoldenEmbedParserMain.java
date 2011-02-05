@@ -33,6 +33,11 @@ import java.util.GregorianCalendar;
 import java.util.Iterator;
 import java.util.List;
 import java.util.TimeZone;
+import java.util.logging.FileHandler;
+import java.util.logging.Level;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
+import java.util.logging.XMLFormatter;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -92,6 +97,10 @@ public class GoldenEmbedParserMain {
 
 	GoogleElevation googleElevation;
 	Options options = new Options();
+
+	LogManager lm = LogManager.getLogManager();
+	Logger logger = null;
+	String logFilePath = "";
 
 	/**
 	 * @param args
@@ -166,6 +175,17 @@ public class GoldenEmbedParserMain {
 		try {
 			// parse the command line arguments
 			CommandLine line = parser.parse(options, args);
+			if (line.hasOption("logfile"))
+				logFilePath = line.getOptionValue("logfile");
+
+			FileHandler fh = new FileHandler(logFilePath + "geparser.log");
+			fh.setFormatter(new XMLFormatter());
+			logger = Logger.getLogger("GoogleElevation");
+
+			logger.addHandler(fh);
+
+			lm.addLogger(logger);
+			logger.setLevel(Level.INFO);
 
 			// Load up the file
 			File file = null;
@@ -185,7 +205,7 @@ public class GoldenEmbedParserMain {
 			if (line.hasOption("serelevation"))
 				serElevationPath = line.getOptionValue("serelevation");
 
-			googleElevation = new GoogleElevation(serElevationPath);
+			googleElevation = new GoogleElevation(serElevationPath, logger);
 
 			if (!line.hasOption("inputfile")) {
 				printUsage();
@@ -216,18 +236,23 @@ public class GoldenEmbedParserMain {
 				System.exit(0);
 
 			} catch (IOException e) {
-				e.printStackTrace();
+				logger.log(Level.SEVERE, e.toString());
 			}
 		} catch (ParseException exp) {
 			// oops, something went wrong
+			logger.log(Level.SEVERE, exp.toString());
 			System.err.println("Parsing failed.  Reason: " + exp.getMessage());
+		} catch (SecurityException e) {
+			logger.log(Level.SEVERE, e.toString());
+		} catch (IOException e) {
+			logger.log(Level.SEVERE, e.toString());
 		}
 
 	}
 
 	public void printUsage() {
 		HelpFormatter formatter = new HelpFormatter();
-		formatter.printHelp("Golden Embed Parser", options);
+		formatter.printHelp("java -jar GoldenEmbedParser.jar", options);
 	}
 
 	private void ANTParsePower(byte[] msgData, int size, GoldenCheetah gc) {
@@ -850,6 +875,7 @@ public class GoldenEmbedParserMain {
 				fout = new PrintWriter(new FileOutputStream(outFile));
 				initGCFile(year, month, day, hr, min, sec);
 			} catch (FileNotFoundException e1) {
+				logger.log(Level.SEVERE, e1.toString());
 				e1.printStackTrace();
 				System.exit(1);
 			}
