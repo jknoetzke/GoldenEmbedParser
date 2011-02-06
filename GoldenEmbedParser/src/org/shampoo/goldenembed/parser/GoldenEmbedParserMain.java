@@ -240,8 +240,8 @@ public class GoldenEmbedParserMain {
 			}
 		} catch (ParseException exp) {
 			// oops, something went wrong
-			logger.log(Level.SEVERE, exp.toString());
-			System.err.println("Parsing failed.  Reason: " + exp.getMessage());
+			System.out.println("Parsing failed.  Reason: " + exp.getMessage());
+			printUsage();
 		} catch (SecurityException e) {
 			logger.log(Level.SEVERE, e.toString());
 		} catch (IOException e) {
@@ -742,10 +742,6 @@ public class GoldenEmbedParserMain {
 			// If we haven't created the file, create it
 			if (outFile == null)
 				initOutFile(gps, outFilePath, timeStamp);
-			if (gc.getSecs() - gc.getPrevWattsecs() >= 5) {
-				gc.setWatts(0);
-				gc.setCad(0);
-			}
 
 			if (gc.getPrevsecs() != gc.getSecs()) {
 				gc.setWatts((int) Round(
@@ -756,14 +752,6 @@ public class GoldenEmbedParserMain {
 				gcArray.add(_gc);
 				gc.setPrevsecs(gc.getSecs());
 				gc.newWatts = false;
-
-				/*
-				 * Wait.manySec(2);
-				 * gc.setElevation(googleElevation.getElevation(
-				 * Float.parseFloat(gc.getLatitude()),
-				 * Float.parseFloat(gc.getLongitude())));
-				 */
-
 			}
 
 		} catch (NumberFormatException e) {
@@ -885,13 +873,13 @@ public class GoldenEmbedParserMain {
 	private long parseTimeStamp(byte[] timeStamp) throws NumberFormatException {
 		Calendar cal = new GregorianCalendar();
 
-		Byte year;
-		Byte month;
-		Byte day;
+		int year;
+		int month;
+		int day;
 
-		Byte hour;
-		Byte min;
-		Byte sec;
+		int hour;
+		int min;
+		int sec;
 		int i = 0;
 
 		year = new Byte(timeStamp[i++]);
@@ -902,7 +890,12 @@ public class GoldenEmbedParserMain {
 		min = new Byte(timeStamp[i++]);
 		sec = new Byte(timeStamp[i++]);
 
-		cal.set(year, month, day, hour, min, sec);
+		year += 2000;
+
+		if (hour <= 24 && min <= 60 && sec <= 60)
+			cal.set(year, month, day, hour, min, sec);
+		else
+			throw new NumberFormatException();
 
 		long totalSecs = cal.getTimeInMillis() / 1000;
 
@@ -944,6 +937,7 @@ public class GoldenEmbedParserMain {
 			watts = gc.getWatts();
 			cad = gc.getCad();
 		}
+
 		for (long x = startSecs; x < endSecs; x++) {
 			_gc = findGCByTime(x); // Do we already have a GC record for this
 									// time ?
