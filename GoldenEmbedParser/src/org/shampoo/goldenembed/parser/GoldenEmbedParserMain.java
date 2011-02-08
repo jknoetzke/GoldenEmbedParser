@@ -48,6 +48,7 @@ import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.shampoo.goldenembed.elevation.GoogleElevation;
+import org.shampoo.goldenembed.tools.GnuPlot;
 
 public class GoldenEmbedParserMain {
 	static final byte MESG_RESPONSE_EVENT_ID = 0x40;
@@ -101,6 +102,9 @@ public class GoldenEmbedParserMain {
 	LogManager lm = LogManager.getLogManager();
 	Logger logger = null;
 	String logFilePath = "";
+	String plotFile;
+
+	GregorianCalendar rideDate = null;
 
 	/**
 	 * @param args
@@ -119,15 +123,19 @@ public class GoldenEmbedParserMain {
 		power = new Power();
 	}
 
-	private void initGCFile(int year, int month, int day, int hour, int minute,
-			int second) {
+	private void initGCFile() {
+		int month = rideDate.get(Calendar.MONTH);
+		month++;
 		fout.write("<!DOCTYPE GoldenCheetah>\n");
 		fout.write("<ride>\n");
 		fout.write(spacer1 + "<attributes>\n");
 		fout.write(spacer2 + "<attribute key=\"Start time\" value=\""
-				+ formatDate(year) + "/" + formatDate(++month) + "/"
-				+ formatDate(day) + " " + formatDate(hour) + ":"
-				+ formatDate(minute) + ":" + formatDate(second) + " UTC\" />\n");
+				+ formatDate(rideDate.get(Calendar.YEAR)) + "/"
+				+ formatDate(month) + "/"
+				+ formatDate(rideDate.get(Calendar.DAY_OF_MONTH)) + " "
+				+ formatDate(rideDate.get(Calendar.HOUR)) + ":"
+				+ formatDate(rideDate.get(Calendar.MINUTE)) + ":"
+				+ formatDate(rideDate.get(Calendar.SECOND)) + " UTC\" />\n");
 		fout.write(spacer2
 				+ "<attribute key=\"Device type\" value=\"Golden Embed GPS\" />\n");
 		fout.write(spacer1 + "</attributes>\n");
@@ -164,11 +172,15 @@ public class GoldenEmbedParserMain {
 		Option debugOption = OptionBuilder.withArgName("debug").hasArg()
 				.withDescription("Level of debug").create("debug");
 
+		Option plotFileOption = OptionBuilder.withArgName("plotfile").hasArg()
+				.withDescription("Output gnuplot data file").create("plotfile");
+
 		options.addOption(inputFile);
 		options.addOption(serialElevation);
 		options.addOption(outputFile);
 		options.addOption(logfile);
 		options.addOption(debugOption);
+		options.addOption(plotFileOption);
 
 		// create the parser
 		CommandLineParser parser = new GnuParser();
@@ -215,9 +227,9 @@ public class GoldenEmbedParserMain {
 
 			if (line.hasOption("outfile"))
 				outFilePath = line.getOptionValue("outfile");
-			else {
-				outFilePath = file.getAbsolutePath();
-			}
+
+			if (line.hasOption("plotfile"))
+				plotFile = line.getOptionValue("plotfile");
 
 			System.out.println("Input File: " + file.getAbsolutePath());
 			byte[] readBytes;
@@ -243,9 +255,11 @@ public class GoldenEmbedParserMain {
 			System.out.println("Parsing failed.  Reason: " + exp.getMessage());
 			printUsage();
 		} catch (SecurityException e) {
-			logger.log(Level.SEVERE, e.toString());
+			System.out.println("Parsing failed.  Reason: " + e.getMessage());
+			printUsage();
 		} catch (IOException e) {
-			logger.log(Level.SEVERE, e.toString());
+			System.out.println("Parsing failed.  Reason: " + e.getMessage());
+			printUsage();
 		}
 
 	}
@@ -728,6 +742,9 @@ public class GoldenEmbedParserMain {
 			for (int i = 0; i < 6; i++)
 				timeStamp[i] = readBytes[pos++];
 
+			if (rideDate == null)
+				createRideDate(timeStamp);
+
 			long secs = parseTimeStamp(timeStamp);
 
 			gc.setLatitude(gps.getLatitude());
@@ -738,10 +755,6 @@ public class GoldenEmbedParserMain {
 			gc.setPrevSpeedSecs(gc.getSecs());
 			gc.setSecs(secs);
 			gc.setDate(gps.getDate());
-
-			// If we haven't created the file, create it
-			if (outFile == null)
-				initOutFile(gps, outFilePath, timeStamp);
 
 			if (gc.getPrevsecs() != gc.getSecs()) {
 				gc.setWatts((int) Round(
@@ -835,33 +848,35 @@ public class GoldenEmbedParserMain {
 		return gps;
 	}
 
-	private void initOutFile(GPS gps, String filePath, byte[] timeStamp) {
+	private void createRideDate(byte[] timeStamp) {
+		String strYear = "20" + timeStamp[0];
+		int year = Integer.valueOf(strYear);
+		int month = timeStamp[1];
+		month--; // Zero based
+		int day = timeStamp[2];
+
+		int hr = timeStamp[3];
+		int min = timeStamp[4];
+		int sec = timeStamp[5];
+
+		rideDate = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
+		rideDate.set(year, month, day, hr, min, sec);
+
+	}
+
+	private void initOutFile(String filePath) {
 		if (outFile == null) {
-
-			String strYear = "20" + timeStamp[0];
-			int year = Integer.valueOf(strYear);
-			int month = timeStamp[1];
-			month--; // Zero based
-			int day = timeStamp[2];
-
-			int hr = timeStamp[3];
-			int min = timeStamp[4];
-			int sec = timeStamp[5];
-
-			Calendar rideCal = new GregorianCalendar(
-					TimeZone.getTimeZone("UTC"));
-			rideCal.set(year, month, day, hr, min, sec);
 
 			SimpleDateFormat sdf = new SimpleDateFormat("yyyy_MM_dd_hh_mm_ss");
 
-			outFile = new File(filePath + "/" + sdf.format(rideCal.getTime())
+			outFile = new File(filePath + "/" + sdf.format(rideDate.getTime())
 					+ ".gc");
 
 			System.out.println("GC Formatted File: " + outFile.toString());
 
 			try {
 				fout = new PrintWriter(new FileOutputStream(outFile));
-				initGCFile(year, month, day, hr, min, sec);
+				initGCFile();
 			} catch (FileNotFoundException e1) {
 				logger.log(Level.SEVERE, e1.toString());
 				e1.printStackTrace();
@@ -966,13 +981,22 @@ public class GoldenEmbedParserMain {
 				.getGCElevations(gcArray);
 		Iterator<GoldenCheetah> iterElevation = gcElevations.iterator();
 		// Iterator<GoldenCheetah> iterElevation = gcArray.iterator();
-		while (iterElevation.hasNext()) {
-			GoldenCheetah _gc = iterElevation.next();
-			writeGCRecord(_gc);
-		}
 
 		// Serialize the Elevation Map.
 		googleElevation.serializeElevations();
+
+		if (outFilePath != null) {
+			initOutFile(outFilePath);
+
+			while (iterElevation.hasNext()) {
+				GoldenCheetah _gc = iterElevation.next();
+				writeGCRecord(_gc);
+			}
+		}
+
+		GnuPlot plot = new GnuPlot();
+		if (plotFile != null)
+			plot.writeOutGnuPlot(gcArray, plotFile);
 		System.out.println("Finished");
 	}
 
