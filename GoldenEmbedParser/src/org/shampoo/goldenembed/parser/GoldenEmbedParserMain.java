@@ -25,7 +25,11 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 
 public class GoldenEmbedParserMain {
 
@@ -48,9 +52,12 @@ public class GoldenEmbedParserMain {
     boolean errorFlag = false;
     long totalSpikes = 0;
     boolean isGSC = false;
+    int lastWattSecs = 0; //To keep track of the last time watts were saved.
 
     private static final String spacer1 = "    ";
     private static final String spacer2 = "        ";
+
+    List<GoldenCheetah> gcArray = new ArrayList<GoldenCheetah>();
 
     Power power;
     SpeedCad speedCad;
@@ -184,8 +191,8 @@ public class GoldenEmbedParserMain {
             i = ANTCfgCapabilties(i, size); // rxBuf[3] .. skip sync, size, msg
             break;
         case MESG_BROADCAST_DATA_ID:
-            if (debug)
-                System.out.println("ID: MESG_BROADCAST_DATA_ID\n");
+            //if (debug)
+            //    System.out.println("ID: MESG_BROADCAST_DATA_ID\n");
             Byte aByte = new Byte(rxIN[++i]);
             int chan = aByte.intValue();
             if (chan == 0)
@@ -197,30 +204,11 @@ public class GoldenEmbedParserMain {
 
             if(gc.getPrevsecs() != gc.getSecs())
             {
-                if(gc.getSecs() - gc.getPrevWattsecs() >= 3)
-                {
-                    gc.setWatts(0);
-                }
-                else
-                {
-                    gc.setWatts((int)Round(power.getWatts() / power.getTotalWattCounter(),0));
-                    gc.setCad((int)Round(power.getRpm() / power.getTotalCadCounter(),0));
-                }
+                gc.setWatts((int)Round(power.getWatts() / power.getTotalWattCounter(),0));
+                gc.setCad((int)Round(power.getRpm() / power.getTotalCadCounter(),0));
 
-                if (!isGSC) {
-            	    if (!power.first0x12)
-            	        gc.setCad((int)Round(power.getRpm() / power.getTotalCadCounter(),0));
-                }
-                if(gc.getSecs() - gc.getPrevCadSecs() >= 3)
-                    gc.setCad(0);
-
-                if(gc.getSecs () - gc.getPrevSpeedSecs() >= 3)
-                    gc.setSpeed(0);
-
-                if(gc.getSecs () - gc.getPrevHRSecs() >= 3)
-                    gc.setHr(0);
-
-                writeGCRecord(gc);
+                GoldenCheetah _gc = gc.clone(gc);
+                gcArray.add(_gc);
                 gc.setPrevsecs(gc.getSecs());
                 gc.newWatts = false;
             }
@@ -454,28 +442,28 @@ public class GoldenEmbedParserMain {
         }
         else if(msgData[i] == 0x11)  // Parse ANT+ 0x11 messages (PowerTap)
         {
-        	i++;
-        	return i = ANTParsePower0x11(msgData, i, size, gc);
+            i++;
+            return i = ANTParsePower0x11(msgData, i, size, gc);
         }
         else
         {
-        	i = i+2;
-        	return i + size;
+            i = i+2;
+            return i + size;
         }
     }
 
     public int ANTParsePower0x11(byte[] msgData, int i, int size, GoldenCheetah gc) {
-    	// For parsing ANT+ 0x11 messages
-    	// Counter (u8) Unknown (u8) Cadence (u8) Wheel_RPM_Counter (u16) Torque_Counter (u16)
-    	// Cnt_diff = (Last Counter - Current Counter + 256) mod 256
-    	// Torque_diff = (Last Torque - Current Torque + 65536) mod 65536
-    	// NM = Torque_diff / 32 / Cnt_diff
-    	// Wheel_RPM_diff = (Last Wheel RPM - Current Wheel_RPM + 65536) mod 65536
-    	// Power = 122880 * Cnt_diff / Wheel_RPM_diff
+        // For parsing ANT+ 0x11 messages
+        // Counter (u8) Unknown (u8) Cadence (u8) Wheel_RPM_Counter (u16) Torque_Counter (u16)
+        // Cnt_diff = (Last Counter - Current Counter + 256) mod 256
+        // Torque_diff = (Last Torque - Current Torque + 65536) mod 65536
+        // NM = Torque_diff / 32 / Cnt_diff
+        // Wheel_RPM_diff = (Last Wheel RPM - Current Wheel_RPM + 65536) mod 65536
+        // Power = 122880 * Cnt_diff / Wheel_RPM_diff
 
-    	int c1, c2, pr1, t1, r1;
+        int c1, c2, pr1, t1, r1;
 
-    	double cdiff = 0;
+        double cdiff = 0;
         double tdiff = 0;
         double rdiff = 0;
         double nm = 0;
@@ -558,15 +546,15 @@ public class GoldenEmbedParserMain {
                        totalSpikes++;
                   }
              }
-        	  else
+              else
                   i = setTimeStamp(msgData, ++i, gc, false);
         }
         else
              i = setTimeStamp(msgData, ++i, gc, false);
 
         power.setR(r1);
-    	power.setT(t1);
-    	power.setCnt(c1);
+        power.setT(t1);
+        power.setCnt(c1);
 
         return --i; // For Loop will advance itself.
     }
@@ -575,8 +563,6 @@ public class GoldenEmbedParserMain {
         int t1;
         int p1;
         int r1;
-
-        //i += 2;
 
         int end = i + size - 2;
         double rdiff = 0;
@@ -667,23 +653,23 @@ public class GoldenEmbedParserMain {
                     gc.newWatts = true;
                 }
 
-            	power.setRpm(power.getRpm() + rpm);
+                power.setRpm(power.getRpm() + rpm);
                 power.setWatts(power.getWatts() + watts);
                 double wattCounter = power.getTotalWattCounter();
                 double cadCounter = power.getTotalCadCounter();
                 power.setTotalWattCounter(wattCounter + 1);
                 power.setTotalCadCounter(cadCounter + 1);
-                gc.setPrevWattsecs(gc.getSecs());
-                gc.setPrevCadSecs(gc.getSecs());
 
+                flushPowerArray(gc);
             } else {
                 if (debug)
                     System.out.println("Spike Found: pdiff: " + pdiff + " rdiff: " + rdiff + " tdiff: " + tdiff+ "\n");
                 totalSpikes++;
             }
         } else
+        {
             i = setTimeStamp(msgData, i, gc, false);
-
+        }
         if (power.first0x12)
             power.first0x12 = false;
 
@@ -729,7 +715,7 @@ public class GoldenEmbedParserMain {
 
         for (i = 0; i < rxBuf.length; i++)
         {
-        	if (rxBuf[i] == MESG_TX_SYNC && inMsg) {
+            if (rxBuf[i] == MESG_TX_SYNC && inMsg) {
                 inMsg = false;
                 msgN = 0; // Always reset msg count if we get a sync
                 msgN++;
@@ -746,6 +732,7 @@ public class GoldenEmbedParserMain {
                             + totalTrans);
                     System.out.println("% Failure: " + (totalErrors / totalTrans) * 100.0);
                     System.out.println("Total CAD or Watt Spikes: " + totalSpikes);
+                    writeOutGCRecords();
                     closeGCFile();
                     System.exit(0); // EOF
                 }
@@ -770,6 +757,7 @@ public class GoldenEmbedParserMain {
         System.out.println("\n\nTotal Failed Checksums: " + totalErrors + " Out of Total ANT Messages: " + totalTrans);
         System.out.println("% Failure: " + (totalErrors / totalTrans) * 100.0);
         System.out.println("Total CAD or Watt Spikes: " + totalSpikes);
+        writeOutGCRecords();
         closeGCFile();
 
     }
@@ -840,16 +828,16 @@ public class GoldenEmbedParserMain {
                 System.out.println("[MESG_NETWORK_KEY_ID]");
             break;
         case MESG_CHANNEL_EVENT_ERROR:
-        	if(code == 0x01)
-        	{
-        		if(ch == 0)
-        	     System.out.println("Dropped HRM");
-        		else if(ch == 1)
-        			System.out.println("Dropped Power");
-        		else if(ch == 2)
-        			System.out.println("Dropped Cadence/Speed");
-        	}
-        	break;
+            if(code == 0x01)
+            {
+                if(ch == 0)
+                 System.out.println("Dropped HRM");
+                else if(ch == 1)
+                    System.out.println("Dropped Power");
+                else if(ch == 2)
+                    System.out.println("Dropped Cadence/Speed");
+            }
+            break;
         default:
             if (debug)
                 System.out.println("[unknown]: " + UnicodeFormatter.byteToHex(id));
@@ -866,8 +854,8 @@ public class GoldenEmbedParserMain {
     }
 
     public static int byteArrayToInt(byte[] b, int offset, int size) {
-    	uShort uint = new uShort(b, offset);
-    	return uint.getValue();
+        uShort uint = new uShort(b, offset);
+        return uint.getValue();
     }
 
     private void writeGCRecord(GoldenCheetah gc)
@@ -882,6 +870,85 @@ public class GoldenEmbedParserMain {
           Rval = Rval * p;
           double tmp = Math.round(Rval);
           return (double)tmp/p;
+    }
+
+    private void flushPowerArray(GoldenCheetah gc)
+    {
+        GoldenCheetah _gc;
+        //Now create GC file records for the missing messages.
+
+        if(gcArray.size() == 0)
+            return;
+        int startSecs = lastWattSecs;
+        int endSecs = gc.getSecs(); //The next time we are about to save.
+        int diffSecs = endSecs - startSecs;
+        int watts = 0;
+        long cad = 0;
+
+        if(diffSecs >= 3) //Let's no be ridiculous.
+        {
+            watts = 0;
+            cad = 0;
+        }
+        else if(diffSecs != 0)
+        {
+            watts = gc.getWatts() / diffSecs;
+            cad = gc.getCad() / diffSecs;
+        }
+        else
+        {
+            watts = gc.getWatts();
+            cad = gc.getCad();
+        }
+        for(int x = startSecs; x < endSecs; x++)
+        {
+            _gc = findGCByTime(x); //Do we already have a GC record for this time ?
+            if(_gc != null)
+            {
+                GoldenCheetah tmpGC = new GoldenCheetah();
+                tmpGC = _gc.clone(_gc);
+                tmpGC.setCad(cad);
+                tmpGC.setWatts(watts);
+                gcArray.set(gcArray.indexOf(_gc), tmpGC);
+            }
+            else
+            {
+                _gc = new GoldenCheetah();
+                _gc = _gc.clone(gc);
+                _gc.setSecs(x);
+                _gc.setWatts(watts);
+                _gc.setCad(cad);
+                gcArray.add(_gc);                
+            }
+        }
+        lastWattSecs = endSecs + 1;
+
+    }
+
+    private void writeOutGCRecords()
+    {
+        Iterator<GoldenCheetah> iter = gcArray.iterator();
+        Collections.sort(gcArray, new SortBySeconds());
+
+        while(iter.hasNext())
+        {
+            GoldenCheetah _gc = (GoldenCheetah)iter.next();
+            writeGCRecord(_gc);
+        }
+    }
+
+    private GoldenCheetah findGCByTime(int secs)
+    {
+        Iterator<GoldenCheetah> iter = gcArray.iterator();
+        GoldenCheetah _gc;
+        while(iter.hasNext())
+        {
+            _gc =   iter.next();
+            if(_gc.getSecs() == secs)
+                return _gc;
+        }
+
+        return null;
     }
 
 }
