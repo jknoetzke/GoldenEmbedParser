@@ -1044,10 +1044,10 @@ public class GoldenEmbedParserMain {
 	}
 
 	private void writeOutGCRecords() {
-		Iterator<GoldenCheetah> iter = gcArray.iterator();
 		Collections.sort(gcArray, new SortBySeconds());
 
 		if (outGCFilePath != null) {
+			Iterator<GoldenCheetah> iter = gcArray.iterator();
 			while (iter.hasNext()) {
 				GoldenCheetah _gc = iter.next();
 				writeGCRecord(_gc);

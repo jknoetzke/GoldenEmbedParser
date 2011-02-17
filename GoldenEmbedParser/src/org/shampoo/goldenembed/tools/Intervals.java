@@ -56,14 +56,15 @@ public class Intervals {
 
 			System.out.println("");
 			System.out.print("Watts = " + (totalWatts / count));
-			System.out.print(" Cadence = " + (totalHr / count));
-			System.out.println(" Hr = " + (totalCad / count));
+			System.out.print(" Cadence = " + (totalCad / count));
+			System.out.print(" Hr = " + (totalHr / count));
 
 			veryStart = veryEnd + 1;
 			veryEnd = params.indexOf(" ", veryStart);
 			if (veryEnd == -1)
 				veryEnd = params.length();
 		}
+		System.out.println("");
 
 	}
 

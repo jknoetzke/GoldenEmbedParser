@@ -31,7 +31,7 @@ public class GnuPlot {
 		while (iter.hasNext()) {
 			gc = iter.next();
 
-			if (gc.getSecs() % 20 == 0 && gc.getSecs() != 0) {
+			if (gc.getSecs() != 0) {
 
 				fout.write(convertToTime(gc.getSecs()) + SPACE
 						+ (totalWatts / count) + SPACE + (totalHr / count)
