@@ -10,7 +10,7 @@ import org.shampoo.goldenembed.parser.GoldenCheetah;
 
 public class GnuPlot {
 
-    private final static String SPACE = " ";
+	private final static String SPACE = " ";
 
     public GnuPlot() {
     }
@@ -79,4 +79,5 @@ public class GnuPlot {
 		+ (seconds < 10 ? "0" : "") + seconds);
 
     }
+
 }

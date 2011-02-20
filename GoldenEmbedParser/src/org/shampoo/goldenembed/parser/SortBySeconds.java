@@ -5,4 +5,3 @@ public class SortBySeconds implements java.util.Comparator<GoldenCheetah> {
         int secDiff = (int) (aGC.getSecs() - anotherGC.getSecs());
         return secDiff;
     }
-}

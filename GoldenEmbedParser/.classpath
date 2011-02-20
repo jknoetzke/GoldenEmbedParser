@@ -7,5 +7,7 @@
 	<classpathentry kind="lib" path="lib/gdata-core-1.0.jar"/>
 	<classpathentry kind="lib" path="lib/gdata-maps-2.0.jar"/>
 	<classpathentry kind="lib" path="lib/guava-r08.jar"/>
-	<classpathentry kind="output" path="bin"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="lib/commons-cli-1.2.jar"/>
+ 	<classpathentry kind="output" path="bin"/>
 </classpath>
