@@ -84,8 +84,6 @@ public class GoldenEmbedParserMain {
 	private static final String spacer1 = "    ";
 	private static final String spacer2 = "        ";
 
-	private float p_fil = 0;
-
 	List<GoldenCheetah> gcArray = new ArrayList<GoldenCheetah>();
 
 	Power power;
@@ -99,6 +97,7 @@ public class GoldenEmbedParserMain {
 	String serElevationPath;
 
 	GoogleElevation googleElevation;
+	AltitudePressure altiPressure;
 	Options options = new Options();
 
 	String outGCFilePath;
@@ -192,6 +191,11 @@ public class GoldenEmbedParserMain {
 				.withDescription("Password for Fusion Tables")
 				.create("password");
 
+		Option baroPressureOption = OptionBuilder.withArgName("altitude").hasArg()
+		.withDescription("Starting Altitude (if using pressure to obtain altitude)")
+		.create("altitude");
+		
+		
 		options.addOption(inputFile);
 		options.addOption(outputGCFile);
 		options.addOption(outputGnuPlotFile);
@@ -200,6 +204,7 @@ public class GoldenEmbedParserMain {
 		options.addOption(fusionTablesOption);
 		options.addOption(usernameOption);
 		options.addOption(passwordOption);
+		options.addOption(baroPressureOption);
 
 		// create the parser
 		CommandLineParser parser = new GnuParser();
@@ -237,6 +242,10 @@ public class GoldenEmbedParserMain {
 			if (line.hasOption("interval"))
 				intervalParam = line.getOptionValue("interval");
 
+			if (line.hasOption("altitude"))
+				altiPressure = new AltitudePressure(Float.valueOf(line.getOptionValue("altitude")));
+			
+		   /*
 			if (line.hasOption("fusiontables"))
 				sendToFusionTables = true;
 
@@ -249,7 +258,11 @@ public class GoldenEmbedParserMain {
 				username = line.getOptionValue("username");
 				password = line.getOptionValue("password");
 			}
-
+			
+			*/
+			
+			
+			
 			System.out.println("Input File: " + file.getAbsolutePath());
 			byte[] readBytes;
 			try {
@@ -760,12 +773,7 @@ public class GoldenEmbedParserMain {
 			String strPressure = convertBytesToString(pressureByte);
 			float pressure = Float.parseFloat(strPressure);
 
-			if (p_fil == 0)
-				p_fil = pressure;
-
-			p_fil = (32 * p_fil + (pressure - p_fil)) / 32;
-
-			float altitude = AltitudePressure.altiCalc(pressure / 100);
+			gc.setElevation(altiPressure.altiCalc(pressure / 100.0f));
 
 			byte[] timeStamp = new byte[6];
 
@@ -784,7 +792,7 @@ public class GoldenEmbedParserMain {
 			gc.setDate(gps.getDate());
 
 			// If we haven't created the file, create it
-			if (outFile == null)
+			if (outFile == null && outFilePath != null)
 				initOutFile(gps, outFilePath, timeStamp);
 
 			if (gc.getPrevsecs() != gc.getSecs()) {

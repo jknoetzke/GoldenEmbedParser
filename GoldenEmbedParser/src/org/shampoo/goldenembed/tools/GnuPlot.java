@@ -20,41 +20,18 @@ public class GnuPlot {
 	GoldenCheetah gc;
 	PrintWriter fout = initPlotFile(outFile);
 
-	int totalWatts = 0;
-	int count = 0;
-	int totalHr = 0;
-	int totalCad = 0;
-	int totalSpeed = 0;
-	int totalDistance = 0;
-	// Open up the file..
-
 	while (iter.hasNext()) {
 	    gc = iter.next();
 
-	    if (gc.getSecs() % 20 == 0 && gc.getSecs() != 0) {
+	    if (gc.getSecs() != 0) {
 
 		fout.write(convertToTime(gc.getSecs()) + SPACE
-			+ (totalWatts / count) + SPACE + (totalHr / count)
-			+ SPACE + (totalCad / count) + SPACE
-			+ (totalSpeed / count) + SPACE
-			+ (totalDistance / count) + "\n");
-
-		totalWatts = 0;
-		count = 0;
-		totalHr = 0;
-		totalCad = 0;
-		totalSpeed = 0;
-		totalDistance = 0;
-
+			+ gc.getWatts() + SPACE + gc.getHr()
+			+ SPACE + gc.getCad() + SPACE
+			+ gc.getSpeed() + SPACE
+			+ gc.getDistance() + SPACE
+			+ gc.getElevation() + "\n");
 	    }
-
-	    totalWatts += gc.getWatts();
-	    totalHr += gc.getHr();
-	    totalCad += gc.getCad();
-	    totalSpeed += gc.getSpeed();
-	    totalDistance += gc.getDistance();
-	    count++;
-
 	}
 	fout.close();
     }
