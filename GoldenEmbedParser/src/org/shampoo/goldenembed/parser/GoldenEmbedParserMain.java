@@ -201,9 +201,9 @@ public class GoldenEmbedParserMain {
 		options.addOption(outputGnuPlotFile);
 		options.addOption(debugOption);
 		options.addOption(intervalOption);
-		options.addOption(fusionTablesOption);
-		options.addOption(usernameOption);
-		options.addOption(passwordOption);
+		//options.addOption(fusionTablesOption);
+		//options.addOption(usernameOption);
+		//options.addOption(passwordOption);
 		options.addOption(baroPressureOption);
 
 		// create the parser
@@ -276,7 +276,6 @@ public class GoldenEmbedParserMain {
 						* 100.0);
 				System.out.println("Total CAD or Watt Spikes: " + totalSpikes);
 				writeOutGCRecords();
-				closeGCFile();
 				System.exit(0);
 
 			} catch (IOException e) {
@@ -742,7 +741,6 @@ public class GoldenEmbedParserMain {
 					* 100.0);
 			System.out.println("Total CAD or Watt Spikes: " + totalSpikes);
 			writeOutGCRecords();
-			closeGCFile();
 			System.exit(0);
 		}
 
