@@ -104,6 +104,8 @@ public class GoldenEmbedParserMain {
 	String outGnuPlotPath;
 	String intervalParam;
 	boolean sendToFusionTables = false;
+	boolean wantsAltitudePressure = false;
+	String serializedElevationPath = null;
 
 	LogManager lm = LogManager.getLogManager();
 	Logger logger = null;
@@ -178,33 +180,45 @@ public class GoldenEmbedParserMain {
 				.withDescription("Interval Format: MM:SS+MM ex: 62:00+20")
 				.create("interval");
 
-		Option fusionTablesOption = OptionBuilder.withArgName("fustiontables")
+		/*
+		 * Option fusionTablesOption =
+		 * OptionBuilder.withArgName("fustiontables") .hasArg()
+		 * .withDescription("true or false to upload to Fusion Tables")
+		 * .create("fusiontables");
+		 * 
+		 * Option usernameOption =
+		 * OptionBuilder.withArgName("username").hasArg()
+		 * .withDescription("Username for Fusion Tables") .create("username");
+		 * 
+		 * Option passwordOption =
+		 * OptionBuilder.withArgName("password").hasArg()
+		 * .withDescription("Password for Fusion Tables") .create("password");
+		 */
+
+		Option baroPressureOption = OptionBuilder
+				.withArgName("altitude")
 				.hasArg()
-				.withDescription("true or false to upload to Fusion Tables")
-				.create("fusiontables");
+				.withDescription(
+						"set to anything to obtain altitude from pressure")
+				.create("altitude");
 
-		Option usernameOption = OptionBuilder.withArgName("username").hasArg()
-				.withDescription("Username for Fusion Tables")
-				.create("username");
+		Option serializedElevationOption = OptionBuilder
+				.withArgName("serelevation")
+				.hasArg()
+				.withDescription(
+						"To use Google Elevation Service set path to serialized elevation file")
+				.create("serelevation");
 
-		Option passwordOption = OptionBuilder.withArgName("password").hasArg()
-				.withDescription("Password for Fusion Tables")
-				.create("password");
-
-		Option baroPressureOption = OptionBuilder.withArgName("altitude").hasArg()
-		.withDescription("Starting Altitude (if using pressure to obtain altitude)")
-		.create("altitude");
-		
-		
 		options.addOption(inputFile);
 		options.addOption(outputGCFile);
 		options.addOption(outputGnuPlotFile);
 		options.addOption(debugOption);
 		options.addOption(intervalOption);
-		//options.addOption(fusionTablesOption);
-		//options.addOption(usernameOption);
-		//options.addOption(passwordOption);
+		// options.addOption(fusionTablesOption);
+		// options.addOption(usernameOption);
+		// options.addOption(passwordOption);
 		options.addOption(baroPressureOption);
+		options.addOption(serializedElevationOption);
 
 		// create the parser
 		CommandLineParser parser = new GnuParser();
@@ -243,26 +257,21 @@ public class GoldenEmbedParserMain {
 				intervalParam = line.getOptionValue("interval");
 
 			if (line.hasOption("altitude"))
-				altiPressure = new AltitudePressure(Float.valueOf(line.getOptionValue("altitude")));
-			
-		   /*
-			if (line.hasOption("fusiontables"))
-				sendToFusionTables = true;
+				wantsAltitudePressure = true;
 
-			if (sendToFusionTables == true) {
-				if ((line.hasOption("username") == false || line
-						.hasOption("username") == false)) {
-					printUsage();
-					System.exit(1);
-				}
-				username = line.getOptionValue("username");
-				password = line.getOptionValue("password");
-			}
-			
-			*/
-			
-			
-			
+			if (line.hasOption("serelevation"))
+				serializedElevationPath = line.getOptionValue("serelevation");
+
+			/*
+			 * if (line.hasOption("fusiontables")) sendToFusionTables = true;
+			 * 
+			 * if (sendToFusionTables == true) { if ((line.hasOption("username")
+			 * == false || line .hasOption("username") == false)) {
+			 * printUsage(); System.exit(1); } username =
+			 * line.getOptionValue("username"); password =
+			 * line.getOptionValue("password"); }
+			 */
+
 			System.out.println("Input File: " + file.getAbsolutePath());
 			byte[] readBytes;
 			try {
@@ -763,15 +772,23 @@ public class GoldenEmbedParserMain {
 			// Now Parse GPS
 			gps = GPSHandler(readBytes);
 
-			// Now get the barometric pressure.
-			byte[] pressureByte = new byte[6];
-			for (int i = 0; i < 6; i++)
-				pressureByte[i] = readBytes[pos++];
+			if (altiPressure == null && wantsAltitudePressure == true) {
+				// Get the intial elevation from Google use Lat and Lon
+				altiPressure = new AltitudePressure(
+						GoogleElevation.getElevation(
+								Float.valueOf(gc.getLatitude()),
+								Float.valueOf(gc.getLongitude())));
+				// Now get the barometric pressure.
+				byte[] pressureByte = new byte[6];
+				for (int i = 0; i < 6; i++)
+					pressureByte[i] = readBytes[pos++];
 
-			String strPressure = convertBytesToString(pressureByte);
-			float pressure = Float.parseFloat(strPressure);
+				String strPressure = convertBytesToString(pressureByte);
+				float pressure = Float.parseFloat(strPressure);
 
-			gc.setElevation(altiPressure.altiCalc(pressure / 100.0f));
+				gc.setElevation(altiPressure.altiCalc(pressure / 100.0f));
+			} else
+				pos += 6;
 
 			byte[] timeStamp = new byte[6];
 
@@ -1010,10 +1027,16 @@ public class GoldenEmbedParserMain {
 	}
 
 	private void writeOutGCRecords() {
-		Iterator<GoldenCheetah> iter = gcArray.iterator();
 		Collections.sort(gcArray, new SortBySeconds());
 
+		if (serializedElevationPath != null) {
+			googleElevation = new GoogleElevation(serializedElevationPath,
+					logger);
+			gcArray = googleElevation.getGCElevations(gcArray);
+		}
+
 		if (outGCFilePath != null) {
+			Iterator<GoldenCheetah> iter = gcArray.iterator();
 			while (iter.hasNext()) {
 				GoldenCheetah _gc = iter.next();
 				writeGCRecord(_gc);

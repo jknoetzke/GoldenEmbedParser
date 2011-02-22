@@ -39,26 +39,20 @@ public class GoogleElevation {
 		this.logger = logger;
 	}
 
-	public float getElevation(Float lat, Float lon) {
+	public static float getElevation(Float lat, Float lon) {
 
 		Location location = new Location(lat, lon);
-		if (!elevations.containsKey(location)) {
-
-			ElevationRequestor requestor = new ElevationRequestor();
-			ElevationResponse elevationResponse;
-			try {
-				elevationResponse = requestor.getElevation(location);
-				List<Result> resultList = elevationResponse.getResults();
-				float elevation = resultList.get(0).getElevation();
-				elevations.put(location, elevation);
-				return elevation;
-			} catch (GeocodeException ex) {
-				logger.log(Level.SEVERE, ex.toString());
-				return 0;
-			}
-		} else
-			return elevations.get(location);
-
+		ElevationRequestor requestor = new ElevationRequestor();
+		ElevationResponse elevationResponse;
+		try {
+			elevationResponse = requestor.getElevation(location);
+			List<Result> resultList = elevationResponse.getResults();
+			float elevation = resultList.get(0).getElevation();
+			return elevation;
+		} catch (GeocodeException ex) {
+			System.out.println(ex);
+			return 0;
+		}
 	}
 
 	public List<Result> parseMultipleLocations(List<Location> locations) {
