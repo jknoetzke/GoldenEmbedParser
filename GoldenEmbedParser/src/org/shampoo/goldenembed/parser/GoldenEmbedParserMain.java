@@ -103,7 +103,6 @@ public class GoldenEmbedParserMain {
     String outGCFilePath;
     String outGnuPlotPath;
     String intervalParam;
-    boolean sendToFusionTables = false;
     boolean wantsAltitudePressure = false;
     String serializedElevationPath = null;
 
@@ -180,21 +179,6 @@ public class GoldenEmbedParserMain {
                 .withDescription("Interval Format: MM:SS+MM ex: 62:00+20")
                 .create("interval");
 
-        /*
-         * Option fusionTablesOption =
-         * OptionBuilder.withArgName("fustiontables") .hasArg()
-         * .withDescription("true or false to upload to Fusion Tables")
-         * .create("fusiontables");
-         * 
-         * Option usernameOption =
-         * OptionBuilder.withArgName("username").hasArg()
-         * .withDescription("Username for Fusion Tables") .create("username");
-         * 
-         * Option passwordOption =
-         * OptionBuilder.withArgName("password").hasArg()
-         * .withDescription("Password for Fusion Tables") .create("password");
-         */
-
         Option baroPressureOption = OptionBuilder
                 .withArgName("altitude")
                 .hasArg()
@@ -214,9 +198,6 @@ public class GoldenEmbedParserMain {
         options.addOption(outputGnuPlotFile);
         options.addOption(debugOption);
         options.addOption(intervalOption);
-        // options.addOption(fusionTablesOption);
-        // options.addOption(usernameOption);
-        // options.addOption(passwordOption);
         options.addOption(baroPressureOption);
         options.addOption(serializedElevationOption);
 
@@ -262,15 +243,6 @@ public class GoldenEmbedParserMain {
             if (line.hasOption("serelevation"))
                 serializedElevationPath = line.getOptionValue("serelevation");
 
-            /*
-             * if (line.hasOption("fusiontables")) sendToFusionTables = true;
-             * 
-             * if (sendToFusionTables == true) { if ((line.hasOption("username")
-             * == false || line .hasOption("username") == false)) {
-             * printUsage(); System.exit(1); } username =
-             * line.getOptionValue("username"); password =
-             * line.getOptionValue("password"); }
-             */
 
             System.out.println("Input File: " + file.getAbsolutePath());
             byte[] readBytes;
