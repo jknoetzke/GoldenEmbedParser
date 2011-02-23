@@ -1,0 +1,32 @@
+        http://chomsky.shampoo.ca/goldenembed
+
+    This is the Java parser for the GoldenEmbed project. It contains two
+main git branches. The first (master) is for the main GoldenEmbed Project.
+The second (gps) is for GoldenEmbedGPS (GEGPS). 
+
+    The goal for these two branches is to simply parse the data left on
+the SD card from the GoldenEmbed(GPS) project. The format for the data on the
+card is as such:
+
+For GoldenEmbed (v1) the format is very simple. The data is simply a raw stream
+of ANT+ data and ends in an RTC timestamp (HR MINUTE SECOND). One byte 
+represents HOUR another for MINUTE and another byte for SECOND.
+
+    To know more of the ANT+ protocol see: http://www.thisisant.com
+
+For GoldenEmbedGPS (v2 or GEGPS) the message conists of the raw ANT+ data
+followed by LONGITUDE, LATITUDE, DATE and TIME.
+
+An example for GE V1 would be:
+
+ANT+ A4 03 40 01 51 00 B7
+TIME: 0B 01 0C 17 33 34 (Elapsed timer from the start)
+
+
+An example message for GE v2 would be as such:
+
+ANT+:      A4 03 40 01 51 00 B7 
+LATITUDE:  34 35 33 32 2E 31 30 38 33 00 00 00 00 00 00 
+LONGITUDE: 30 37 33 33 34 2E 35 32 31 34 00 00 00 00 00 
+DATE:      0B 01 0C 17 33 34
+TIME:      0B 01 0C 17 33 34 (UTC)
