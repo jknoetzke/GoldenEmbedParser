@@ -42,173 +42,173 @@ public class GoldenCheetah {
     private String name;
 
     public String getDescription() {
-  return description;
+        return description;
     }
 
     public void setDescription(String description) {
-  this.description = description;
+        this.description = description;
     }
 
     public String getName() {
-  return name;
+        return name;
     }
 
     public void setName(String name) {
-  this.name = name;
+        this.name = name;
     }
 
     public float getElevation() {
-  return elevation;
+        return elevation;
     }
 
     public void setElevation(float elevation) {
-  this.elevation = elevation;
+        this.elevation = elevation;
     }
 
     public String getDate() {
-  return date;
+        return date;
     }
 
     public void setDate(String date) {
-  this.date = date;
+        this.date = date;
     }
 
     public int getLen() {
-  return len;
+        return len;
     }
 
     public void setLen(int len) {
-  this.len = len;
+        this.len = len;
     }
 
     public int getHr() {
-  return hr;
+        return hr;
     }
 
     public void setHr(int hr) {
-  this.hr = hr;
+        this.hr = hr;
     }
 
     public long getCad() {
-  return cad;
+        return cad;
     }
 
     public void setCad(long cad) {
-  this.cad = cad;
+        this.cad = cad;
     }
 
     public long getWatts() {
-  return watts;
+        return watts;
     }
 
     public void setWatts(long watts) {
-  this.watts = watts;
+        this.watts = watts;
     }
 
     public long getSecs() {
-  return secs;
+        return secs;
     }
 
     public void setSecs(long secs) {
-  this.secs = secs;
+        this.secs = secs;
     }
 
     public long getPrevsecs() {
-  return prevsecs;
+        return prevsecs;
     }
 
     public void setPrevsecs(long prevsecs) {
-  this.prevsecs = prevsecs;
+        this.prevsecs = prevsecs;
     }
 
     public long getPrevWattsecs() {
-  return prevWattsecs;
+        return prevWattsecs;
     }
 
     public void setPrevWattsecs(long prevWattsecs) {
-  this.prevWattsecs = prevWattsecs;
+        this.prevWattsecs = prevWattsecs;
     }
 
     public long getPrevSpeedSecs() {
-  return prevSpeedSecs;
+        return prevSpeedSecs;
     }
 
     public void setPrevSpeedSecs(long prevSpeedSecs) {
-  this.prevSpeedSecs = prevSpeedSecs;
+        this.prevSpeedSecs = prevSpeedSecs;
     }
 
     public long getPrevCadSecs() {
-  return prevCadSecs;
+        return prevCadSecs;
     }
 
     public void setPrevCadSecs(long prevCadSecs) {
-  this.prevCadSecs = prevCadSecs;
+        this.prevCadSecs = prevCadSecs;
     }
 
     public long getPrevHRSecs() {
-  return prevHRSecs;
+        return prevHRSecs;
     }
 
     public void setPrevHRSecs(long prevHRSecs) {
-  this.prevHRSecs = prevHRSecs;
+        this.prevHRSecs = prevHRSecs;
     }
 
     public double getDistance() {
-  return distance;
+        return distance;
     }
 
     public void setDistance(double distance) {
-  this.distance = distance;
+        this.distance = distance;
     }
 
     public double getSpeed() {
-  return speed;
+        return speed;
     }
 
     public void setSpeed(double speed) {
-  this.speed = speed;
+        this.speed = speed;
     }
 
     public String getLatitude() {
-  return latitude;
+        return latitude;
     }
 
     public void setLatitude(String latitude) {
-  if (latitude.length() >= 8)
-      this.latitude = latitude.substring(0, 7);
-  else
-      this.latitude = latitude;
+        if (latitude.length() >= 8)
+            this.latitude = latitude.substring(0, 7);
+        else
+            this.latitude = latitude;
     }
 
     public String getLongitude() {
-  return longitude;
+        return longitude;
     }
 
     public void setLongitude(String longitude) {
-  if (longitude.length() >= 9)
-      this.longitude = longitude.substring(0, 8);
-  else
-      this.longitude = longitude;
+        if (longitude.length() >= 9)
+            this.longitude = longitude.substring(0, 8);
+        else
+            this.longitude = longitude;
     }
 
     public GoldenCheetah clone(GoldenCheetah _gc) {
-  GoldenCheetah gc = new GoldenCheetah();
-  gc.setCad(_gc.getCad());
-  gc.setDistance(_gc.getDistance());
-  gc.setHr(_gc.getHr());
-  gc.setLen(_gc.getLen());
-  gc.setPrevCadSecs(_gc.getPrevCadSecs());
-  gc.setPrevHRSecs(_gc.getPrevHRSecs());
-  gc.setPrevsecs(_gc.getPrevsecs());
-  gc.setPrevSpeedSecs(_gc.getPrevSpeedSecs());
-  gc.setPrevWattsecs(_gc.getPrevWattsecs());
-  gc.setSecs(_gc.getSecs());
-  gc.setSpeed(_gc.getSpeed());
-  gc.setWatts(_gc.getWatts());
-  gc.setLatitude(_gc.getLatitude());
-  gc.setLongitude(_gc.getLongitude());
-  gc.setElevation(_gc.getElevation());
+        GoldenCheetah gc = new GoldenCheetah();
+        gc.setCad(_gc.getCad());
+        gc.setDistance(_gc.getDistance());
+        gc.setHr(_gc.getHr());
+        gc.setLen(_gc.getLen());
+        gc.setPrevCadSecs(_gc.getPrevCadSecs());
+        gc.setPrevHRSecs(_gc.getPrevHRSecs());
+        gc.setPrevsecs(_gc.getPrevsecs());
+        gc.setPrevSpeedSecs(_gc.getPrevSpeedSecs());
+        gc.setPrevWattsecs(_gc.getPrevWattsecs());
+        gc.setSecs(_gc.getSecs());
+        gc.setSpeed(_gc.getSpeed());
+        gc.setWatts(_gc.getWatts());
+        gc.setLatitude(_gc.getLatitude());
+        gc.setLongitude(_gc.getLongitude());
+        gc.setElevation(_gc.getElevation());
 
-  return gc;
+        return gc;
     }
 }
