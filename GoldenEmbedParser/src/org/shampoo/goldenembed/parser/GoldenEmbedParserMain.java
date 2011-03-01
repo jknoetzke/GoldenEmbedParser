@@ -84,6 +84,8 @@ public class GoldenEmbedParserMain {
     private static final String spacer1 = "    ";
     private static final String spacer2 = "        ";
 
+    String rideDate;
+
     List<GoldenCheetah> gcArray = new ArrayList<GoldenCheetah>();
 
     Power power;
@@ -954,6 +956,9 @@ public class GoldenEmbedParserMain {
         date = cal.get(Calendar.SECOND);
         String strSec = formatDate(date);
 
+        rideDate = cal.get(Calendar.YEAR) + "/" + strMonth + "/" + strDay + " "
+                + strHour + ":" + strMin + ":" + strSec;
+
         File outFile = new File(outGCFilePath + "/" + cal.get(Calendar.YEAR)
                 + "_" + strMonth + "_" + strDay + "_" + strHour + "_" + strMin
                 + "_" + strSec + ".gc");
@@ -994,11 +999,13 @@ public class GoldenEmbedParserMain {
             rideCal.set(year, month, day, hr, min, sec);
 
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy_MM_dd_hh_mm_ss");
+            SimpleDateFormat rideFormat = new SimpleDateFormat(
+                    "yyyy/MM/dd hh:mm:ss");
 
             outFile = new File(filePath + "/" + sdf.format(rideCal.getTime())
                     + ".gc");
 
-            System.out.println("GC Formatted File: " + outFile.toString());
+            rideDate = rideFormat.format(rideCal.getTime());
 
             try {
                 fout = new PrintWriter(new FileOutputStream(outFile));
@@ -1134,8 +1141,8 @@ public class GoldenEmbedParserMain {
 
         if (sendToFusionTables) {
             FusionTables ft = new FusionTables(username, password);
-            ft.uploadToFusionTables("Golden Embed", gcArray,
-                    "Drive to St-Sauveur with GE Smoothing", gcIntervals);
+            ft.uploadToFusionTables("Golden Embed", gcArray, rideDate,
+                    gcIntervals);
         }
 
         System.out.println("Finished");
