@@ -28,8 +28,7 @@ An example message for GE v2 would be as such:
 ANT+:      A4 03 40 01 51 00 B7 
 LATITUDE:  34 35 33 32 2E 31 30 38 33 00 00 00 00 00 00 
 LONGITUDE: 30 37 33 33 34 2E 35 32 31 34 00 00 00 00 00 
-DATE:      0B 01 0C 17 33 34
-TIME:      0B 01 0C 17 33 34 (UTC)
+DATE+TIME:      0B 01 0C 17 33 34 (UTC)
 
 
 
