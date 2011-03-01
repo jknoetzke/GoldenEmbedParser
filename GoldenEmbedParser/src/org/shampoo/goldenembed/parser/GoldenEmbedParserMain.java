@@ -268,6 +268,9 @@ public class GoldenEmbedParserMain {
             if (line.hasOption("fusiontables"))
                 sendToFusionTables = true;
 
+            if (line.hasOption("gps"))
+                isGPS = true;
+
             if (sendToFusionTables == true) {
                 if ((line.hasOption("username") == false || line
                         .hasOption("username") == false)) {
