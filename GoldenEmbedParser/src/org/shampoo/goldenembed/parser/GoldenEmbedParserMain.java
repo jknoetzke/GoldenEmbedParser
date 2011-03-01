@@ -206,17 +206,6 @@ public class GoldenEmbedParserMain {
                 gc.setWatts((int)Round(power.getWatts() / power.getTotalWattCounter(),0));
                 gc.setCad((int)Round(power.getRpm() / power.getTotalCadCounter(),0));
 
-                if (!isGSC) {
-                    if (!power.first0x12)
-                        gc.setCad((int)Round(power.getRpm() / power.getTotalCadCounter(),0));
-                }
-
-                if(gc.getSecs () - gc.getPrevSpeedSecs() >= 5)
-                    gc.setSpeed(0);
-
-                if(gc.getSecs () - gc.getPrevHRSecs() >= 5)
-                    gc.setHr(0);
-
                 GoldenCheetah _gc = gc.clone(gc);
                 gcArray.add(_gc);
                 gc.setPrevsecs(gc.getSecs());
