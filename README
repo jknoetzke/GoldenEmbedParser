@@ -20,7 +20,7 @@ followed by LONGITUDE, LATITUDE, DATE and TIME.
 An example for GE V1 would be:
 
 ANT+ A4 03 40 01 51 00 B7
-TIME: 0B 01 0C 17 33 34 (Elapsed timer from the start)
+TIME: 17 33 34 (Elapsed timer from the start)
 
 
 An example message for GE v2 would be as such:
