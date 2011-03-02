@@ -173,7 +173,7 @@ public class FusionTables {
     public void uploadToFusionTables(String description,
             List<GoldenCheetah> gcArray, String name,
             List<Intervals> gcIntervals) {
-        int counter = 0;
+        int counter = 1;
         Intervals gcInterval = null;
         int interval = 0;
 
