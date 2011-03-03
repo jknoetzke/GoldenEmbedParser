@@ -49,6 +49,7 @@ import org.shampoo.goldenembed.elevation.AltitudePressure;
 import org.shampoo.goldenembed.elevation.GoogleElevation;
 import org.shampoo.goldenembed.tools.FusionTables;
 import org.shampoo.goldenembed.tools.GnuPlot;
+import org.shampoo.goldenembed.tools.IntervalBean;
 import org.shampoo.goldenembed.tools.Intervals;
 
 public class GoldenEmbedParserMain {
@@ -1119,7 +1120,7 @@ public class GoldenEmbedParserMain {
 
     private void writeOutGCRecords() {
         Collections.sort(gcArray, new SortBySeconds());
-        List<Intervals> gcIntervals = new ArrayList<Intervals>();
+        List<IntervalBean> gcIntervals = new ArrayList<IntervalBean>();
 
         if (serializedElevationPath != null) {
             googleElevation = new GoogleElevation(serializedElevationPath,

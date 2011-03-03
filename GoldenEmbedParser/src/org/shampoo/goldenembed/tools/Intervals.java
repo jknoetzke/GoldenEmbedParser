@@ -8,106 +8,15 @@ import org.shampoo.goldenembed.parser.GoldenCheetah;
 
 public class Intervals {
 
-    private long watts;
-    private long speed;
-    private int hr;
-    private long cad;
-    private long startInterval;
-    private long endInterval;
-    private long duration;
-    private String latitude;
-    private String longitude;
-    private float elevation;
-
-    public String getLatitude() {
-        return latitude;
-    }
-
-    public void setLatitude(String latitude) {
-        this.latitude = latitude;
-    }
-
-    public String getLongitude() {
-        return longitude;
-    }
-
-    public void setLongitude(String longitude) {
-        this.longitude = longitude;
-    }
-
-    public float getElevation() {
-        return elevation;
-    }
-
-    public void setElevation(float elevation) {
-        this.elevation = elevation;
-    }
-
-    public long getWatts() {
-        return watts;
-    }
-
-    public void setWatts(long watts) {
-        this.watts = watts;
-    }
-
-    public long getSpeed() {
-        return speed;
-    }
-
-    public void setSpeed(long speed) {
-        this.speed = speed;
-    }
-
-    public int getHr() {
-        return hr;
-    }
-
-    public void setHr(int hr) {
-        this.hr = hr;
-    }
-
-    public long getCad() {
-        return cad;
-    }
-
-    public void setCad(long cad) {
-        this.cad = cad;
-    }
-
-    public long getStartInterval() {
-        return startInterval;
-    }
-
-    public void setStartInterval(long startInterval) {
-        this.startInterval = startInterval;
-    }
-
-    public long getEndInterval() {
-        return endInterval;
-    }
-
-    public void setEndInterval(long endInterval) {
-        this.endInterval = endInterval;
-    }
-
-    public long getDuration() {
-        return duration;
-    }
-
-    public void setDuration(long duration) {
-        this.duration = duration;
-    }
-
     public Intervals() {
 
     }
 
-    public List<Intervals> createInterval(List<GoldenCheetah> gcArray,
+    public List<IntervalBean> createInterval(List<GoldenCheetah> gcArray,
             String params) {
 
         GoldenCheetah gc = new GoldenCheetah();
-        List<Intervals> intervals = new ArrayList<Intervals>();
+        List<IntervalBean> intervals = new ArrayList<IntervalBean>();
 
         int totalParams = occurances(" ", params);
         totalParams++;
@@ -121,6 +30,8 @@ public class Intervals {
         int intervalTime = 0;
 
         for (int i = 0; i < totalParams; i++) {
+
+            IntervalBean ib = new IntervalBean();
 
             String currentParams = params.substring(veryStart, veryEnd);
             end = currentParams.indexOf("+", 0);
@@ -151,12 +62,12 @@ public class Intervals {
                     intervalLon = gc.getLongitude();
                     intervalElevation = gc.getElevation();
                     if (gc.getSecs() == secs)
-                        startInterval = gc.getSecs();
+                        ib.setStartInterval(gc.getSecs());
                     if (gc.getSecs() == intervalTime + secs)
-                        endInterval = gc.getSecs();
+                        ib.setEndInterval(gc.getSecs());
                     count++;
                 }
-                setDuration(endInterval - startInterval);
+                ib.setDuration(ib.getEndInterval() - ib.getStartInterval());
             }
 
             System.out.println("");
@@ -164,17 +75,18 @@ public class Intervals {
             System.out.print(" Cadence = " + (totalCad / count));
             System.out.print(" Hr = " + (totalHr / count));
             System.out.print(" Speed = " + (totalSpeed / count));
-            System.out.print(" Duration = " + secondsToString(getDuration()));
+            System.out
+                    .print(" Duration = " + secondsToString(ib.getDuration()));
 
-            setWatts(totalWatts / count);
-            setCad(totalCad / count);
-            setHr((int) totalHr / count);
-            setSpeed(totalSpeed / count);
-            setLatitude(intervalLat);
-            setLongitude(intervalLon);
-            setElevation(intervalElevation);
+            ib.setWatts(totalWatts / count);
+            ib.setCad(totalCad / count);
+            ib.setHr((int) totalHr / count);
+            ib.setSpeed(totalSpeed / count);
+            ib.setLatitude(intervalLat);
+            ib.setLongitude(intervalLon);
+            ib.setElevation(intervalElevation);
 
-            intervals.add(this);
+            intervals.add(ib);
 
             veryStart = veryEnd + 1;
             veryEnd = params.indexOf(" ", veryStart);

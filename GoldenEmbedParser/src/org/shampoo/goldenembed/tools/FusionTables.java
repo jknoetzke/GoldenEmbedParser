@@ -172,9 +172,9 @@ public class FusionTables {
 
     public void uploadToFusionTables(String description,
             List<GoldenCheetah> gcArray, String name,
-            List<Intervals> gcIntervals) {
+            List<IntervalBean> gcIntervals) {
         int counter = 1;
-        Intervals gcInterval = null;
+        IntervalBean gcInterval = null;
         int interval = 0;
 
         if (!gcIntervals.isEmpty())
@@ -202,22 +202,35 @@ public class FusionTables {
                 }
 
                 if (gcInterval != null) {
-                    if (gc.getSecs() >= gcInterval.getStartInterval()
-                            && gc.getSecs() <= gc.getSecs()) {
-                        createNewPoint(
-                                name,
-                                getDescriptionString(gcInterval),
-                                gcInterval,
-                                new String("Duration: "
-                                        + Intervals.secondsToString(gcInterval
-                                                .getDuration()) + " Watts: "
+                    if (gc.getSecs() == gcInterval.getStartInterval()
+                            || gc.getSecs() == gcInterval.getEndInterval()) {
+                        String duration;
+                        if (gc.getSecs() == gcInterval.getStartInterval()) {
+                            duration = "Start: "
+                                    + Intervals.secondsToString(gcInterval
+                                            .getStartInterval());
+                        } else {
+                            duration = "End: "
+                                    + Intervals.secondsToString(gcInterval
+                                            .getEndInterval())
+                                    + " Duration: "
+                                    + Intervals.secondsToString(gcInterval
+                                            .getDuration());
+                        }
+                        createNewPoint(name, getDescriptionString(gcInterval),
+                                gcInterval, new String(duration + " Watts: "
                                         + gcInterval.getWatts() + " HR: "
                                         + gcInterval.getHr() + " Speed: "
-                                        + gcInterval.getSpeed())); // Start
+                                        + gcInterval.getSpeed()), gc.getSecs()); // Start
                         System.out.print(interval);
-                        interval++;
-                        if (gcIntervals.size() > interval)
-                            gcInterval = gcIntervals.get(interval);
+
+                        if (gc.getSecs() == gcInterval.getEndInterval()) {
+                            interval++;
+                            if (gcIntervals.size() > interval) {
+                                gcInterval = gcIntervals.get(interval);
+                            } else
+                                gcInterval = null;
+                        }
                     }
                 }
                 counter++;
@@ -259,8 +272,9 @@ public class FusionTables {
      * @throws ServiceException
      * @throws IOException
      */
-    private void createNewPoint(String name, String description, Intervals gc,
-            String interval) throws IOException, ServiceException {
+    private void createNewPoint(String name, String description,
+            IntervalBean gc, String interval, long pointInTime)
+            throws IOException, ServiceException {
         GPS gps = new GPS();
         gps.setLatitude(gc.getLatitude());
         gps.setLongitude(gc.getLongitude());
@@ -269,7 +283,7 @@ public class FusionTables {
                 + tableId
                 + " (name,description,time, watts,hr,speed,cadence,elevation,geometry,interval) VALUES "
                 + values(name, getDescriptionString(gc),
-                        String.valueOf(gc.getEndInterval()),
+                        String.valueOf(pointInTime),
                         String.valueOf(gc.getWatts()),
                         String.valueOf(gc.getHr()),
                         String.valueOf(gc.getSpeed()),
@@ -372,7 +386,7 @@ public class FusionTables {
         return builder.toString();
     }
 
-    private String getDescriptionString(Intervals gc) {
+    private String getDescriptionString(IntervalBean gc) {
         StringBuffer description = new StringBuffer(
                 "<p></p><p>Created by <a href='http://chomsky.shampoo.ca/goldenembed'>Golden Embed</a>");
         description.append("<p>Interval Duration: "
