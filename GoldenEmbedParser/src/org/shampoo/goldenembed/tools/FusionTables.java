@@ -186,9 +186,6 @@ public class FusionTables {
                 strArray.append(createNewLineString(description, name, gc));
                 counter++;
 
-                strArray.append(createNewLineString(description, name, gc));
-                counter++;
-
                 if (counter >= 400) {
                     runUpdate(strArray.toString());
                     strArray = new StringBuffer();
