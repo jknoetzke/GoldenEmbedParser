@@ -5,7 +5,6 @@ import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.shampoo.goldenembed.parser.GPS;
@@ -76,7 +75,6 @@ public class FusionTables {
                     ClientLoginAccountType.GOOGLE);
 
         } catch (AuthenticationException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
     }
@@ -173,8 +171,9 @@ public class FusionTables {
     public void uploadToFusionTables(String description,
             List<GoldenCheetah> gcArray, String name,
             List<IntervalBean> gcIntervals) {
-        int counter = 1;
+        int counter = 0;
         IntervalBean gcInterval = null;
+        StringBuffer strArray = new StringBuffer();
         int interval = 0;
 
         if (!gcIntervals.isEmpty())
@@ -182,46 +181,41 @@ public class FusionTables {
 
         try {
             createNewTable(name);
-            GoldenCheetah gcSummary = new GoldenCheetah();
-            List<GPS> gpsArray = new ArrayList<GPS>();
-
             for (GoldenCheetah gc : gcArray) {
 
-                if (gc.getSecs() % 20 == 0) {
-                    System.out.print(".");
-                    gcSummary.setCad(gcSummary.getCad() / counter);
-                    gcSummary.setHr(gcSummary.getHr() / counter);
-                    gcSummary.setWatts(gcSummary.getWatts() / counter);
-                    gcSummary.setSpeed(gcSummary.getSpeed() / counter);
-                    gcSummary.setElevation(gcSummary.getElevation() / counter);
-                    createNewLineString(description, name, gc, gpsArray);
-                    gcSummary = new GoldenCheetah();
-                    counter = 0;
-                    gpsArray.clear();
+                strArray.append(createNewLineString(description, name, gc));
+                counter++;
 
+                if (counter >= 100) {
+                    runUpdate(strArray.toString());
+                    System.out.print(".");
+                    strArray = new StringBuffer();
+                    counter = 0;
                 }
 
+                // Check if we have intervals
                 if (gcInterval != null) {
                     if (gc.getSecs() == gcInterval.getStartInterval()
                             || gc.getSecs() == gcInterval.getEndInterval()) {
-                        String duration;
+                        String intervalInfo;
                         if (gc.getSecs() == gcInterval.getStartInterval()) {
-                            duration = "Start: "
+                            intervalInfo = "Start: "
                                     + Intervals.secondsToString(gcInterval
                                             .getStartInterval());
                         } else {
-                            duration = "End: "
+                            intervalInfo = "End: "
                                     + Intervals.secondsToString(gcInterval
                                             .getEndInterval())
-                                    + " Duration: "
+                                    + " Time: "
                                     + Intervals.secondsToString(gcInterval
-                                            .getDuration());
+                                            .getDuration()) + " Watts: "
+                                    + gcInterval.getWatts() + " HR: "
+                                    + gcInterval.getHr() + " Speed: "
+                                    + gcInterval.getSpeed();
                         }
                         createNewPoint(name, getDescriptionString(gcInterval),
-                                gcInterval, new String(duration + " Watts: "
-                                        + gcInterval.getWatts() + " HR: "
-                                        + gcInterval.getHr() + " Speed: "
-                                        + gcInterval.getSpeed()), gc.getSecs()); // Start
+                                gcInterval, intervalInfo, gc.getSecs()); // Start
+
                         System.out.print(interval);
 
                         if (gc.getSecs() == gcInterval.getEndInterval()) {
@@ -233,30 +227,15 @@ public class FusionTables {
                         }
                     }
                 }
-                counter++;
-                gcSummary.setCad(gcSummary.getCad() + gc.getCad());
-                gcSummary.setHr(gcSummary.getHr() + gc.getHr());
-                gcSummary.setWatts(gcSummary.getWatts() + gc.getWatts());
-                gcSummary.setSpeed(gcSummary.getSpeed() + gc.getSpeed());
-                gcSummary.setElevation(gcSummary.getElevation()
-                        + gc.getElevation());
-
-                GPS gps = new GPS();
-                gps.setLatitude(gc.getLatitude());
-                gps.setLongitude(gc.getLongitude());
-                gps.setElevation(gc.getElevation());
-                gpsArray.add(gps);
-
             }
+            if (counter != 0) // Flush out what is left
+                runUpdate(strArray.toString());
 
         } catch (IOException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         } catch (ServiceException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
-
     }
 
     /**
@@ -302,9 +281,13 @@ public class FusionTables {
      * @throws ServiceException
      * @throws IOException
      */
-    private void createNewLineString(String name, String description,
-            GoldenCheetah gc, List<GPS> gpsArray) throws IOException,
-            ServiceException {
+    private String createNewLineString(String name, String description,
+            GoldenCheetah gc) throws IOException, ServiceException {
+        GPS gps = new GPS();
+        gps.setLatitude(gc.getLatitude());
+        gps.setLongitude(gc.getLongitude());
+        gps.setElevation(gc.getElevation());
+
         String query = "INSERT INTO "
                 + tableId
                 + " (name,description,time, watts,hr,speed,cadence,elevation,geometry) VALUES "
@@ -314,8 +297,8 @@ public class FusionTables {
                         String.valueOf(gc.getSpeed()),
                         String.valueOf(gc.getCad()),
                         String.valueOf(gc.getElevation()),
-                        getKmlLineString(gpsArray));
-        runUpdate(query);
+                        getKmlLineString(gps)) + "; ";
+        return query;
     }
 
     /**
@@ -325,12 +308,10 @@ public class FusionTables {
      *            The location.
      * @return the kml.
      */
-    private String getKmlLineString(List<GPS> gpsArray) {
+    private String getKmlLineString(GPS gc) {
         StringBuilder builder = new StringBuilder("<LineString><coordinates>");
-        for (GPS gps : gpsArray) {
-            appendCoordinate(gps, builder);
-            builder.append(' ');
-        }
+        appendCoordinate(gc, builder);
+        builder.append(' ');
         builder.append("</coordinates></LineString>");
         return builder.toString();
     }
