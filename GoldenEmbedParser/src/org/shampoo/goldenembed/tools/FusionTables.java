@@ -175,6 +175,15 @@ public class FusionTables {
         IntervalBean gcInterval = null;
         StringBuffer strArray = new StringBuffer();
         int interval = 0;
+        int smoothCounter = 0;
+        long totalWatts = 0;
+        long totalCad = 0;
+        int totalHr = 0;
+        long totalSpeed = 0;
+
+        // Get the total time to smooth
+        long totalSecs = gcArray.get(gcArray.size() - 1).getSecs();
+        long smoothFactor = totalSecs % 200;
 
         if (!gcIntervals.isEmpty())
             gcInterval = gcIntervals.get(0);
@@ -183,13 +192,37 @@ public class FusionTables {
             createNewTable(name);
             for (GoldenCheetah gc : gcArray) {
 
-                strArray.append(createNewLineString(description, name, gc));
-                counter++;
+                if (gc.getSecs() % smoothFactor >= 0) {
+                    GoldenCheetah gcOut = new GoldenCheetah();
+                    gcOut.setWatts(totalWatts / smoothCounter);
+                    gcOut.setCad(totalCad / smoothCounter);
+                    gcOut.setSecs(gc.getSecs());
+                    gcOut.setHr(totalHr / smoothCounter);
+                    gcOut.setSpeed(totalSpeed / smoothCounter);
+                    gcOut.setElevation(gc.getElevation());
 
-                if (counter >= 400) {
-                    runUpdate(strArray.toString());
-                    strArray = new StringBuffer();
-                    counter = 0;
+                    strArray.append(createNewLineString(description, name,
+                            gcOut));
+                    counter++;
+
+                    smoothCounter = 0;
+                    totalWatts = 0;
+                    totalCad = 0;
+                    totalHr = 0;
+                    totalSpeed = 0;
+
+                    if (counter >= 100) {
+                        runUpdate(strArray.toString());
+                        strArray = new StringBuffer();
+                        counter = 0;
+                    }
+
+                } else {
+                    smoothCounter++;
+                    totalWatts += gc.getWatts();
+                    totalCad += gc.getCad();
+                    totalHr += gc.getHr();
+                    totalSpeed += gc.getSpeed();
                 }
 
                 // Check if we have intervals
