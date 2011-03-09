@@ -175,7 +175,7 @@ public class FusionTables {
         IntervalBean gcInterval = null;
         StringBuffer strArray = new StringBuffer();
         int interval = 0;
-        int smoothCounter = 0;
+        int smoothCounter = 1;
         long totalWatts = 0;
         long totalCad = 0;
         int totalHr = 0;
@@ -183,7 +183,7 @@ public class FusionTables {
 
         // Get the total time to smooth
         long totalSecs = gcArray.get(gcArray.size() - 1).getSecs();
-        long smoothFactor = totalSecs % 200;
+        long smoothFactor = totalSecs / 200;
 
         if (!gcIntervals.isEmpty())
             gcInterval = gcIntervals.get(0);
@@ -191,8 +191,7 @@ public class FusionTables {
         try {
             createNewTable(name);
             for (GoldenCheetah gc : gcArray) {
-
-                if (gc.getSecs() % smoothFactor >= 0) {
+                if (gc.getSecs() % smoothFactor == 0) {
                     GoldenCheetah gcOut = new GoldenCheetah();
                     gcOut.setWatts(totalWatts / smoothCounter);
                     gcOut.setCad(totalCad / smoothCounter);
@@ -205,7 +204,7 @@ public class FusionTables {
                             gcOut));
                     counter++;
 
-                    smoothCounter = 0;
+                    smoothCounter = 1;
                     totalWatts = 0;
                     totalCad = 0;
                     totalHr = 0;
