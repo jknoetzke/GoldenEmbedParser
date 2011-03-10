@@ -327,7 +327,10 @@ public class GoldenEmbedParserMain {
         if (msgData[i] == 0x12) // Parse ANT+ 0x12 message (QUARQ)
         {
             ANTParsePower0x12(msgData, size, gc);
+        } else if (msgData[i] == 0x11) {
+            ANTParsePower0x11(msgData, size, gc);
         }
+
     }
 
     private void ANTparseHRM(byte[] msgData, GoldenCheetah gc) {
@@ -589,6 +592,112 @@ public class GoldenEmbedParserMain {
         if (power.first0x12)
             power.first0x12 = false;
 
+    }
+
+    // Powertap support
+    public void ANTParsePower0x11(byte[] msgData, int size, GoldenCheetah gc) {
+        // For parsing ANT+ 0x11 messages
+        // Counter (u8) Unknown (u8) Cadence (u8) Wheel_RPM_Counter (u16)
+        // Torque_Counter (u16)
+        // Cnt_diff = (Last Counter - Current Counter + 256) mod 256
+        // Torque_diff = (Last Torque - Current Torque + 65536) mod 65536
+        // NM = Torque_diff / 32 / Cnt_diff
+        // Wheel_RPM_diff = (Last Wheel RPM - Current Wheel_RPM + 65536) mod
+        // 65536
+        // Power = 122880 * Cnt_diff / Wheel_RPM_diff
+
+        int c1, c2, pr1, t1, r1;
+        int i = 5;
+
+        double cdiff = 0;
+        double tdiff = 0;
+        double rdiff = 0;
+        double nm = 0;
+        double rpm = 0;
+        double watts = 0;
+
+        byte aByte;
+        byte[] byteArray = new byte[2];
+
+        // 0x11 Message counter
+        aByte = msgData[i++];
+        c1 = unsignedByteToInt(aByte);
+
+        // Unknown counter
+        aByte = msgData[i++];
+        c2 = unsignedByteToInt(aByte);
+
+        // Pedal RPM (cadence) value
+        aByte = msgData[i++];
+        pr1 = unsignedByteToInt(aByte);
+
+        // Wheel RPM counter
+        byteArray[1] = msgData[i++];
+        byteArray[0] = msgData[i++];
+        r1 = byteArrayToInt(byteArray, 0, 2);
+
+        // Torque counter
+        byteArray[1] = msgData[i++];
+        byteArray[0] = msgData[i++];
+        t1 = byteArrayToInt(byteArray, 0, 2);
+
+        // System.out.println("c1: " + c1 + " c2: " + c2 + " pr1: " + pr1 +
+        // " t1: " + t1 + " r1: " + r1 + "\n");
+
+        if (power.first0x11) {
+            power.first0x11 = false;
+            power.setR(r1);
+            power.setT(t1);
+            power.setCnt(c1);
+        } else if (c1 != power.getCnt()) {
+            cdiff = ((256 + c1 - power.getCnt()) % 256);
+            tdiff = (65536 + t1 - power.getT()) % 65536;
+            rdiff = (65536 + r1 - power.getR()) % 65536;
+
+            if (tdiff != 0 && rdiff != 0) {
+                nm = (float) tdiff / 32 / (float) cdiff;
+                rpm = 122880 * (float) cdiff / (float) rdiff;
+                watts = rpm * nm * 2 * PI / 60;
+
+                if (debug) {
+                    System.out
+                            .format("ANTParsePower0x11 cad: %3d  nm: %5.2f  rpm: %5.2f  watts: %6.1f",
+                                    pr1, nm, rpm, watts);
+                    System.out.println();
+                }
+
+                if (rpm < 10000 && watts < 10000) {
+                    if (gc.newWatts == false) {
+                        power.setTotalWattCounter(0);
+                        power.setTotalCadCounter(0);
+                        power.setRpm(0);
+                        power.setWatts(0);
+                        gc.newWatts = true;
+                    }
+                    gc.setPrevCadSecs(gc.getSecs());
+                    power.setRpm(power.getRpm() + pr1);
+                    power.setWatts(power.getWatts() + watts);
+                    double wattCounter = power.getTotalWattCounter();
+                    double cadCounter = power.getTotalCadCounter();
+                    power.setTotalWattCounter(wattCounter + 1);
+                    power.setTotalCadCounter(cadCounter + 1);
+                    gc.setPrevWattsecs(gc.getSecs());
+                    gc.setPrevCadSecs(gc.getSecs());
+                } else {
+                    if (debug)
+                        System.out.println("Spike Found: cdiff: " + cdiff
+                                + " rdiff: " + rdiff + " tdiff: " + tdiff
+                                + "\n");
+                    totalSpikes++;
+                }
+            }
+        }
+
+        power.setR(r1);
+        power.setT(t1);
+        power.setCnt(c1);
+
+        return; // For Loop will advance itself.
     }
 
     private boolean ANTrxHandler(byte[] rxBuf, GoldenCheetah gc) {
