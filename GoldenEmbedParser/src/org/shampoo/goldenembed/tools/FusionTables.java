@@ -199,6 +199,8 @@ public class FusionTables {
                     gcOut.setHr(totalHr / smoothCounter);
                     gcOut.setSpeed(totalSpeed / smoothCounter);
                     gcOut.setElevation(gc.getElevation());
+                    gcOut.setLatitude(gc.getLatitude());
+                    gcOut.setLongitude(gc.getLongitude());
 
                     strArray.append(createNewLineString(description, name,
                             gcOut));
