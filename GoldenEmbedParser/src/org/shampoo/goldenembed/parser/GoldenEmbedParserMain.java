@@ -917,11 +917,13 @@ public class GoldenEmbedParserMain {
                                     Float.valueOf(gps.getLongitude())));
                 }
                 int pressureCounter = 0;
-                byte[] pressureByte = new byte[56];
+                byte[] pressureByte = new byte[16];
 
-                while (readBytes[pos] != 0x07)
+                while (readBytes[pos] != 0x07) {
+                    if (pressureCounter == 15)
+                        throw new NumberFormatException();
                     pressureByte[pressureCounter++] = readBytes[pos++];
-
+                }
                 String strPressure = convertBytesToString(pressureByte);
                 float pressure = Float.parseFloat(strPressure);
 
