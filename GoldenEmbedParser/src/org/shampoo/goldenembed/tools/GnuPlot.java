@@ -27,8 +27,7 @@ public class GnuPlot {
 
                 fout.write(convertToTime(gc.getSecs()) + SPACE + gc.getWatts()
                         + SPACE + gc.getHr() + SPACE + gc.getCad() + SPACE
-                        + gc.getSpeed() + SPACE + gc.getDistance() + SPACE
-                        + gc.getElevation() + "\n");
+                        + gc.getSpeed() + SPACE + gc.getElevation() + "\n");
             }
         }
         fout.close();

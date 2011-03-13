@@ -486,7 +486,7 @@ public class GoldenEmbedParserMain {
                         + UnicodeFormatter.byteToHex(msgData[i]));
             if (msgN == 0) {
                 if (power.first0x12) {
-                    // Just store it.
+                    // Just store it.di
                     aByte = new Byte(msgData[i]);
                     power.setR(aByte.intValue());
                     if (megaDebug)
@@ -869,7 +869,7 @@ public class GoldenEmbedParserMain {
         byte[] timeStamp;
         long secs = 0;
 
-        if (pos + bufPos >= readBytes.length) {
+        if (pos + bufPos >= readBytes.length - 1) {
             System.out.println("\n\nTotal Failed Checksums: " + totalErrors
                     + " Out of Total ANT Messages: " + totalTrans);
             System.out.println("% Failure: " + (totalErrors / totalTrans)
@@ -881,6 +881,14 @@ public class GoldenEmbedParserMain {
 
         Byte aByte = new Byte(readBytes[pos + bufPos + 1]);
         int size = aByte.intValue();
+        if (size < 0) {
+            pos++;
+            // We failed a checksum skip..
+            while (readBytes[pos] != MESG_TX_SYNC)
+                pos++;
+            return pos;
+
+        }
         bufToSend = new byte[size + 4];
         for (; bufPos < bufToSend.length; bufPos++)
             bufToSend[bufPos] = readBytes[bufPos + pos];
@@ -893,6 +901,7 @@ public class GoldenEmbedParserMain {
         }
 
         pos = (pos + size + 4);
+
         try {
 
             if (isGPS) {
@@ -900,33 +909,32 @@ public class GoldenEmbedParserMain {
                 // Now Parse GPS
                 gps = GPSHandler(readBytes);
 
-                if (altiPressure == null && wantsAltitudePressure == true) {
-                    // Get the intial elevation from Google use Lat and Lon
+                // Get the intial elevation from Google use Lat and Lon
+                if (altiPressure == null) {
                     altiPressure = new AltitudePressure(
                             GoogleElevation.getElevation(
                                     Float.valueOf(gps.getLatitude()),
-                                    Float.valueOf(gps.getLongitude()))); // Now
-                                                                         // get
-                                                                         // the
-                                                                         // barometric
-                                                                         // pressure.
-                    byte[] pressureByte = new byte[6];
-                    for (int i = 0; i < 6; i++)
-                        pressureByte[i] = readBytes[pos++];
+                                    Float.valueOf(gps.getLongitude())));
+                }
+                int pressureCounter = 0;
+                byte[] pressureByte = new byte[56];
 
-                    String strPressure = convertBytesToString(pressureByte);
-                    float pressure = Float.parseFloat(strPressure);
+                while (readBytes[pos] != 0x07)
+                    pressureByte[pressureCounter++] = readBytes[pos++];
 
-                    gc.setElevation(altiPressure.altiCalc(pressure / 100.0f));
-                } else
-                    pos += 6;
+                String strPressure = convertBytesToString(pressureByte);
+                float pressure = Float.parseFloat(strPressure);
+
+                strPressure = convertBytesToString(pressureByte);
+                pressure = Float.parseFloat(strPressure);
+
+                gc.setElevation(altiPressure.altiCalc(pressure / 100.0f));
 
                 timeStamp = new byte[6];
 
                 for (int i = 0; i < 6; i++)
                     timeStamp[i] = readBytes[pos++];
                 secs = parseTimeStamp(timeStamp);
-
             } else {
                 timeStamp = new byte[3];
                 for (int i = 0; i < 3; i++)
@@ -941,6 +949,8 @@ public class GoldenEmbedParserMain {
             gc.setDistance(gc.getDistance()
                     + (gc.getSpeed() * (gc.getSecs() - gc.getPrevSpeedSecs()) / 3600.0));
             gc.setPrevSpeedSecs(gc.getSecs());
+            if (secs > 86400) // Only fools ride for more then 24hrs a time..
+                throw new NumberFormatException();
             gc.setSecs(secs);
             gc.setDate(gps.getDate());
 
@@ -990,55 +1000,59 @@ public class GoldenEmbedParserMain {
             StringIndexOutOfBoundsException {
         GPS gps = new GPS();
 
-        float degrees = 0;
-        float mins = 0;
+        try {
 
-        byte[] position = parseOutGPS(gpsGGA, 9, pos);
-        String strPosition = convertBytesToString(position);
+            float degrees = 0;
+            float mins = 0;
 
-        pos += 9;
+            byte[] position = parseOutGPS(gpsGGA, 9, pos);
+            String strPosition = convertBytesToString(position);
 
-        if (strPosition.startsWith("0")) {
-            strPosition = strPosition.replaceFirst("0", "-");
-            degrees = Float.parseFloat(strPosition.substring(0, 2));
-            mins = Float.parseFloat(strPosition.substring(2,
-                    strPosition.length()));
-            gps.setLatitude((String.valueOf(-1
-                    * (Math.abs(degrees) + (mins / 60)))));
-        } else {
-            degrees = Float.parseFloat(strPosition.substring(0, 2));
-            mins = Float.parseFloat(strPosition.substring(2,
-                    strPosition.length()));
-            gps.setLatitude(String.valueOf(degrees + (mins / 60)));
+            pos += 9;
+
+            if (strPosition.startsWith("0")) {
+                strPosition = strPosition.replaceFirst("0", "-");
+                degrees = Float.parseFloat(strPosition.substring(0, 2));
+                mins = Float.parseFloat(strPosition.substring(2,
+                        strPosition.length()));
+                gps.setLatitude((String.valueOf(-1
+                        * (Math.abs(degrees) + (mins / 60)))));
+            } else {
+                degrees = Float.parseFloat(strPosition.substring(0, 2));
+                mins = Float.parseFloat(strPosition.substring(2,
+                        strPosition.length()));
+                gps.setLatitude(String.valueOf(degrees + (mins / 60)));
+            }
+
+            position = parseOutGPS(gpsGGA, 9, pos);
+            strPosition = convertBytesToString(position);
+            pos += 9;
+
+            if (strPosition.startsWith("0")) {
+                strPosition = strPosition.replaceFirst("0", "-");
+                degrees = Float.parseFloat(strPosition.substring(0, 3));
+                mins = Float.parseFloat(strPosition.substring(3,
+                        strPosition.length()));
+                gps.setLongitude((String.valueOf(-1
+                        * (Math.abs(degrees) + (mins / 60)))));
+            } else {
+                degrees = Float.parseFloat(strPosition.substring(0, 2));
+                mins = Float.parseFloat(strPosition.substring(2,
+                        strPosition.length()));
+                gps.setLongitude(String.valueOf(Math.abs(degrees) + (mins / 60)));
+            }
+            // Speed
+            position = parseOutGPS(gpsGGA, 4, pos);
+            strPosition = convertBytesToString(position);
+            pos += 4;
+
+            if (strPosition.trim().length() != 0)
+                gps.setSpeed(Double.parseDouble(strPosition));
+            else
+                gps.setSpeed(0.0);
+        } catch (NumberFormatException e) {
+            throw new NumberFormatException();
         }
-
-        position = parseOutGPS(gpsGGA, 9, pos);
-        strPosition = convertBytesToString(position);
-        pos += 9;
-
-        if (strPosition.startsWith("0")) {
-            strPosition = strPosition.replaceFirst("0", "-");
-            degrees = Float.parseFloat(strPosition.substring(0, 3));
-            mins = Float.parseFloat(strPosition.substring(3,
-                    strPosition.length()));
-            gps.setLongitude((String.valueOf(-1
-                    * (Math.abs(degrees) + (mins / 60)))));
-        } else {
-            degrees = Float.parseFloat(strPosition.substring(0, 2));
-            mins = Float.parseFloat(strPosition.substring(2,
-                    strPosition.length()));
-            gps.setLongitude(String.valueOf(Math.abs(degrees) + (mins / 60)));
-        }
-        // Speed
-        position = parseOutGPS(gpsGGA, 4, pos);
-        strPosition = convertBytesToString(position);
-        pos += 4;
-
-        if (strPosition.trim().length() != 0)
-            gps.setSpeed(Double.parseDouble(strPosition));
-        else
-            gps.setSpeed(0.0);
-
         return gps;
     }
 
@@ -1138,38 +1152,45 @@ public class GoldenEmbedParserMain {
     private long parseTimeStamp(byte[] timeStamp) throws NumberFormatException {
         Calendar cal = new GregorianCalendar();
 
-        int year = 0;
-        int month = 0;
-        int day = 0;
+        try {
 
-        int hour;
-        int min;
-        int sec;
-        int i = 0;
+            int year = 0;
+            int month = 0;
+            int day = 0;
 
-        if (isGPS) {
-            year = new Byte(timeStamp[i++]);
-            month = new Byte(timeStamp[i++]);
-            day = new Byte(timeStamp[i++]);
-        }
+            int hour;
+            int min;
+            int sec;
+            int i = 0;
 
-        hour = new Byte(timeStamp[i++]);
-        min = new Byte(timeStamp[i++]);
-        sec = new Byte(timeStamp[i++]);
+            if (isGPS) {
+                year = new Byte(timeStamp[i++]);
+                month = new Byte(timeStamp[i++]);
+                day = new Byte(timeStamp[i++]);
+            }
 
-        year += 2000;
+            hour = new Byte(timeStamp[i++]);
+            min = new Byte(timeStamp[i++]);
+            sec = new Byte(timeStamp[i++]);
 
-        if (hour <= 24 && min <= 60 && sec <= 60)
-            cal.set(year, month, day, hour, min, sec);
-        else
+            year += 2000;
+
+            if (hour <= 24 && min <= 60 && sec <= 60)
+                cal.set(year, month, day, hour, min, sec);
+            else
+                throw new NumberFormatException();
+
+            long totalSecs = cal.getTimeInMillis() / 1000;
+
+            if (firstRecordedTime == 0)
+                firstRecordedTime = totalSecs;
+
+            return totalSecs - firstRecordedTime;
+        } catch (NumberFormatException e) {
             throw new NumberFormatException();
 
-        long totalSecs = cal.getTimeInMillis() / 1000;
+        }
 
-        if (firstRecordedTime == 0)
-            firstRecordedTime = totalSecs;
-
-        return totalSecs - firstRecordedTime;
     }
 
     public boolean isDouble(String input) {
@@ -1231,7 +1252,7 @@ public class GoldenEmbedParserMain {
         Collections.sort(gcArray, new SortBySeconds());
         List<IntervalBean> gcIntervals = new ArrayList<IntervalBean>();
 
-        if (serializedElevationPath != null) {
+        if (wantsAltitudePressure == false) {
             googleElevation = new GoogleElevation(serializedElevationPath,
                     logger);
             gcArray = googleElevation.getGCElevations(gcArray);

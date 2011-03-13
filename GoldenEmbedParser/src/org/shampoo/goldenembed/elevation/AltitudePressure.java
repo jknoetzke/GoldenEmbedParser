@@ -73,6 +73,6 @@ public class AltitudePressure {
         }
         alti = 10 * j - pres * i;
 
-        return alti / 10 + altitude;
+        return Math.abs(alti / 10);
     }
 }
