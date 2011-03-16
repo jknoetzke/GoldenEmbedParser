@@ -924,7 +924,7 @@ public class GoldenEmbedParserMain {
                         throw new NumberFormatException();
                     pressureByte[pressureCounter++] = readBytes[pos++];
                 }
-		pos++; //skip the delimeter
+                pos++; // skip the delimeter
                 String strPressure = convertBytesToString(pressureByte);
                 float pressure = Float.parseFloat(strPressure);
 
