@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.shampoo.goldenembed.parser.GPS;
@@ -180,6 +181,8 @@ public class FusionTables {
         long totalCad = 0;
         int totalHr = 0;
         long totalSpeed = 0;
+        List<GPS> gpsArray = new ArrayList<GPS>();
+        GPS gps;
 
         // Get the total time to smooth
         long totalSecs = gcArray.get(gcArray.size() - 1).getSecs();
@@ -191,6 +194,7 @@ public class FusionTables {
         try {
             createNewTable(name);
             for (GoldenCheetah gc : gcArray) {
+                gps = new GPS();
                 if (gc.getSecs() % smoothFactor == 0) {
                     GoldenCheetah gcOut = new GoldenCheetah();
                     gcOut.setWatts(totalWatts / smoothCounter);
@@ -199,12 +203,11 @@ public class FusionTables {
                     gcOut.setHr(totalHr / smoothCounter);
                     gcOut.setSpeed(totalSpeed / smoothCounter);
                     gcOut.setElevation(gc.getElevation());
-                    gcOut.setLatitude(gc.getLatitude());
-                    gcOut.setLongitude(gc.getLongitude());
 
                     strArray.append(createNewLineString(description, name,
-                            gcOut));
+                            gcOut, gpsArray));
                     counter++;
+                    gpsArray.clear();
 
                     smoothCounter = 1;
                     totalWatts = 0;
@@ -224,6 +227,10 @@ public class FusionTables {
                     totalCad += gc.getCad();
                     totalHr += gc.getHr();
                     totalSpeed += gc.getSpeed();
+                    gps.setElevation(gc.getElevation());
+                    gps.setLatitude(gc.getLatitude());
+                    gps.setLongitude(gc.getLatitude());
+                    gpsArray.add(gps);
                 }
 
                 // Check if we have intervals
@@ -315,7 +322,8 @@ public class FusionTables {
      * @throws IOException
      */
     private String createNewLineString(String name, String description,
-            GoldenCheetah gc) throws IOException, ServiceException {
+            GoldenCheetah gc, List<GPS> gpsArray) throws IOException,
+            ServiceException {
         GPS gps = new GPS();
         gps.setLatitude(gc.getLatitude());
         gps.setLongitude(gc.getLongitude());
@@ -330,7 +338,7 @@ public class FusionTables {
                         String.valueOf(gc.getSpeed()),
                         String.valueOf(gc.getCad()),
                         String.valueOf(gc.getElevation()),
-                        getKmlLineString(gps)) + "; ";
+                        getKmlLineString(gpsArray)) + "; ";
         return query;
     }
 
@@ -341,10 +349,12 @@ public class FusionTables {
      *            The location.
      * @return the kml.
      */
-    private String getKmlLineString(GPS gc) {
+    private String getKmlLineString(List<GPS> gpsArray) {
         StringBuilder builder = new StringBuilder("<LineString><coordinates>");
-        appendCoordinate(gc, builder);
-        builder.append(' ');
+        for (GPS location : gpsArray) {
+            appendCoordinate(location, builder);
+            builder.append(' ');
+        }
         builder.append("</coordinates></LineString>");
         return builder.toString();
     }
