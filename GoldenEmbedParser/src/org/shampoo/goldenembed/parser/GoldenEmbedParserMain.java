@@ -106,7 +106,6 @@ public class GoldenEmbedParserMain {
     String outGCFilePath;
     String outGnuPlotPath;
     String intervalParam;
-    boolean sendToFusionTables = false;
     boolean wantsGoogleElevation = false;
     String serializedElevationPath = null;
 
@@ -251,18 +250,14 @@ public class GoldenEmbedParserMain {
             if (line.hasOption("serelevation"))
                 serializedElevationPath = line.getOptionValue("serelevation");
 
-            if (line.hasOption("fusiontables"))
-                sendToFusionTables = true;
-
             if (line.hasOption("gps"))
                 isGPS = true;
 
-            if (sendToFusionTables == true) {
-                if ((line.hasOption("username") == false || line
-                        .hasOption("username") == false)) {
-                    printUsage();
-                    System.exit(1);
-                }
+            if ((line.hasOption("username") == false || line
+                    .hasOption("username") == false)) {
+                printUsage();
+                System.exit(1);
+            } else {
                 username = line.getOptionValue("username");
                 password = line.getOptionValue("password");
             }
@@ -1263,7 +1258,7 @@ public class GoldenEmbedParserMain {
             gcIntervals = interval.createInterval(gcArray, intervalParam);
         }
 
-        if (sendToFusionTables) {
+        if (username != null) {
             if (rideDate == null) {
                 Calendar rideCal = Calendar.getInstance();
                 SimpleDateFormat rideFormat = new SimpleDateFormat(
@@ -1274,7 +1269,7 @@ public class GoldenEmbedParserMain {
             ft.uploadToFusionTables("Golden Embed", gcArray, rideDate,
                     gcIntervals);
         }
-
+        System.out.println("");
         System.out.println("Finished");
     }
 

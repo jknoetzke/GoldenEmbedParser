@@ -229,7 +229,7 @@ public class FusionTables {
                     totalSpeed += gc.getSpeed();
                     gps.setElevation(gc.getElevation());
                     gps.setLatitude(gc.getLatitude());
-                    gps.setLongitude(gc.getLatitude());
+                    gps.setLongitude(gc.getLongitude());
                     gpsArray.add(gps);
                 }
 
