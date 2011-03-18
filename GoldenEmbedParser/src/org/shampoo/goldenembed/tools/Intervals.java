@@ -126,11 +126,13 @@ public class Intervals {
             return (min * 60) + sec;
         } else if (result == 2) {
 
-            hr = Integer.parseInt(params.substring(0, params.indexOf(":")));
-            min = Integer.parseInt(params.substring((params.indexOf(":") + 1),
-                    params.indexOf(":") - 1));
-            sec = Integer.parseInt(params.substring((params.indexOf(":") + 1),
-                    params.length()));
+            int index = params.indexOf(":");
+            hr = Integer.parseInt(params.substring(0, index));
+            min = Integer.parseInt(params.substring(
+                    (params.indexOf(":", index) + 1),
+                    params.indexOf(":", ++index)));
+            sec = Integer.parseInt(params.substring(
+                    (params.indexOf(":", index) + 1), params.length()));
 
             return (hr * 60 * 60) + (min * 60) + sec;
         }

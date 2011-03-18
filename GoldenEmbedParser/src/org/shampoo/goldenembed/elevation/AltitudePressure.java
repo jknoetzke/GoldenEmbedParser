@@ -3,10 +3,10 @@ package org.shampoo.goldenembed.elevation;
 public class AltitudePressure {
 
     private final float altitude;
-    private double pressureAtAltitude;
     private float p_fil = 0; // initial pressure
 
     public AltitudePressure(float altitude) {
+
         this.altitude = altitude;
 
         // Actual Pressure at altitude.
@@ -20,8 +20,6 @@ public class AltitudePressure {
 
         if (p_fil == 0)
             p_fil = _pres;
-
-        // p_fil = (32 * p_fil + (_pres - p_fil)) / 32;
 
         float pres = Math.abs((float) (_pres - 1013.25 - p_fil));
 
@@ -73,6 +71,6 @@ public class AltitudePressure {
         }
         alti = 10 * j - pres * i;
 
-        return Math.abs(alti / 10);
+        return Math.abs(alti / 10) + this.altitude;
     }
 }

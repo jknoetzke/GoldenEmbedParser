@@ -107,7 +107,7 @@ public class GoldenEmbedParserMain {
     String outGnuPlotPath;
     String intervalParam;
     boolean sendToFusionTables = false;
-    boolean wantsAltitudePressure = false;
+    boolean wantsGoogleElevation = false;
     String serializedElevationPath = null;
 
     LogManager lm = LogManager.getLogManager();
@@ -184,11 +184,6 @@ public class GoldenEmbedParserMain {
                 .withDescription("Interval Format: MM:SS+MM ex: 62:00+20")
                 .create("interval");
 
-        Option fusionTablesOption = OptionBuilder.withArgName("fustiontables")
-                .hasArg()
-                .withDescription("true or false to upload to Fusion Tables")
-                .create("fusiontables");
-
         Option usernameOption = OptionBuilder.withArgName("username").hasArg()
                 .withDescription("Username for Fusion Tables")
                 .create("username");
@@ -196,13 +191,6 @@ public class GoldenEmbedParserMain {
         Option passwordOption = OptionBuilder.withArgName("password").hasArg()
                 .withDescription("Password for Fusion Tables")
                 .create("password");
-
-        Option baroPressureOption = OptionBuilder
-                .withArgName("altitude")
-                .hasArg()
-                .withDescription(
-                        "set to anything to obtain altitude from pressure")
-                .create("altitude");
 
         Option serializedElevationOption = OptionBuilder
                 .withArgName("serelevation")
@@ -219,10 +207,8 @@ public class GoldenEmbedParserMain {
         options.addOption(outputGnuPlotFile);
         options.addOption(debugOption);
         options.addOption(intervalOption);
-        options.addOption(fusionTablesOption);
         options.addOption(usernameOption);
         options.addOption(passwordOption);
-        options.addOption(baroPressureOption);
         options.addOption(serializedElevationOption);
         options.addOption(gpsOption);
 
@@ -261,9 +247,6 @@ public class GoldenEmbedParserMain {
 
             if (line.hasOption("interval"))
                 intervalParam = line.getOptionValue("interval");
-
-            if (line.hasOption("altitude"))
-                wantsAltitudePressure = true;
 
             if (line.hasOption("serelevation"))
                 serializedElevationPath = line.getOptionValue("serelevation");
@@ -1255,7 +1238,7 @@ public class GoldenEmbedParserMain {
         Collections.sort(gcArray, new SortBySeconds());
         List<IntervalBean> gcIntervals = new ArrayList<IntervalBean>();
 
-        if (wantsAltitudePressure == false) {
+        if (serializedElevationPath != null) {
             googleElevation = new GoogleElevation(serializedElevationPath,
                     logger);
             gcArray = googleElevation.getGCElevations(gcArray);
