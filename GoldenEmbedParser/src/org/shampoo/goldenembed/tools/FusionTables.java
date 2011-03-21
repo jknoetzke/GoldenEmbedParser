@@ -207,7 +207,9 @@ public class FusionTables {
                     strArray.append(createNewLineString(description, name,
                             gcOut, gpsArray));
                     counter++;
+                    gps = gpsArray.get(gpsArray.size() - 1); // For continuation
                     gpsArray.clear();
+                    gpsArray.add(gps);
 
                     smoothCounter = 1;
                     totalWatts = 0;
