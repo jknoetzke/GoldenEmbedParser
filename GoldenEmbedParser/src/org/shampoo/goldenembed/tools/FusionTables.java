@@ -193,6 +193,14 @@ public class FusionTables {
 
         try {
             createNewTable(name);
+
+            // Create Start
+            IntervalBean ib = new IntervalBean();
+            ib.setElevation(gcArray.get(0).getElevation());
+            ib.setLatitude(gcArray.get(0).getLatitude());
+            ib.setLongitude(gcArray.get(0).getLongitude());
+            createNewPoint("Start", "Start of Ride", ib, "", 0);
+
             for (GoldenCheetah gc : gcArray) {
                 gps = new GPS();
                 if (gc.getSecs() % smoothFactor == 0) {
@@ -274,6 +282,13 @@ public class FusionTables {
             }
             if (counter != 0) // Flush out what is left
                 runUpdate(strArray.toString());
+            // Create End
+            ib = new IntervalBean();
+            ib.setElevation(gcArray.get(gcArray.size() - 1).getElevation());
+            ib.setLatitude(gcArray.get(gcArray.size() - 1).getLatitude());
+            ib.setLongitude(gcArray.get(gcArray.size() - 1).getLongitude());
+            createNewPoint("End", "End of Ride", ib, "",
+                    gcArray.get(gcArray.size() - 1).getSecs());
 
         } catch (IOException e) {
             e.printStackTrace();
