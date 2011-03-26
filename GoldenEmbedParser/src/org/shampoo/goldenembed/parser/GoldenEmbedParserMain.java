@@ -253,13 +253,15 @@ public class GoldenEmbedParserMain {
             if (line.hasOption("gps"))
                 isGPS = true;
 
-            if ((line.hasOption("username") == false || line
-                    .hasOption("username") == false)) {
-                printUsage();
-                System.exit(1);
-            } else {
+            if ((line.hasOption("username") == true || line
+                    .hasOption("password") == true)) {
                 username = line.getOptionValue("username");
                 password = line.getOptionValue("password");
+
+                if (username.length() == 0 || password.length() == 0) {
+                    printUsage();
+                    System.exit(1);
+                }
             }
 
             System.out.println("Input File: " + file.getAbsolutePath());
@@ -924,6 +926,9 @@ public class GoldenEmbedParserMain {
 
             }
 
+            if (rideDate == null)
+                createRideDate(gps, timeStamp);
+
             gc.setLatitude(gps.getLatitude());
             gc.setLongitude(gps.getLongitude());
             gc.setSpeed(gps.getSpeed() * KNOTS_TO_KILOMETERS);
@@ -1093,6 +1098,29 @@ public class GoldenEmbedParserMain {
 
     }
 
+    private String createRideDate(GPS gps, byte[] timeStamp) {
+
+        String strYear = "20" + timeStamp[0];
+        int year = Integer.valueOf(strYear);
+        int month = timeStamp[1];
+        month--; // Zero based
+        int day = timeStamp[2];
+
+        int hr = timeStamp[3];
+        int min = timeStamp[4];
+        int sec = timeStamp[5];
+
+        Calendar rideCal = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
+        rideCal.set(year, month, day, hr, min, sec);
+
+        SimpleDateFormat rideFormat = new SimpleDateFormat(
+                "yyyy/MM/dd hh:mm:ss");
+        rideDate = rideFormat.format(rideCal.getTime());
+
+        return rideDate;
+
+    }
+
     private void initOutFile(GPS gps, String filePath, byte[] timeStamp) {
         if (outFile == null) {
 
@@ -1108,16 +1136,12 @@ public class GoldenEmbedParserMain {
 
             Calendar rideCal = new GregorianCalendar(
                     TimeZone.getTimeZone("UTC"));
+
             rideCal.set(year, month, day, hr, min, sec);
 
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy_MM_dd_hh_mm_ss");
-            SimpleDateFormat rideFormat = new SimpleDateFormat(
-                    "yyyy/MM/dd hh:mm:ss");
-
             outFile = new File(filePath + "/" + sdf.format(rideCal.getTime())
                     + ".gc");
-
-            rideDate = rideFormat.format(rideCal.getTime());
 
             try {
                 fout = new PrintWriter(new FileOutputStream(outFile));
