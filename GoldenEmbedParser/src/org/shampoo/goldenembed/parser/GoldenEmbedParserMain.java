@@ -926,8 +926,10 @@ public class GoldenEmbedParserMain {
 
             }
 
-            if (rideDate == null)
+            if (rideDate == null && isGPS == true)
                 createRideDate(gps, timeStamp);
+            else
+                createRideDate();
 
             gc.setLatitude(gps.getLatitude());
             gc.setLongitude(gps.getLongitude());
@@ -1052,6 +1054,30 @@ public class GoldenEmbedParserMain {
                 + "<attribute key=\"Device type\" value=\"Golden Embed\" />\n");
         fout.write(spacer1 + "</attributes>\n");
         fout.write("<samples>\n");
+    }
+
+    private void createRideDate() {
+
+        Calendar cal = Calendar.getInstance();
+        int date = cal.get(Calendar.MONTH);
+        date++;
+
+        String strMonth = formatDate(date);
+        date = cal.get(Calendar.DAY_OF_MONTH);
+        String strDay = formatDate(date);
+
+        date = cal.get(Calendar.HOUR_OF_DAY);
+        String strHour = formatDate(date);
+
+        date = cal.get(Calendar.MINUTE);
+        String strMin = formatDate(date);
+
+        date = cal.get(Calendar.SECOND);
+        String strSec = formatDate(date);
+
+        rideDate = cal.get(Calendar.YEAR) + "/" + strMonth + "/" + strDay + " "
+                + strHour + ":" + strMin + ":" + strSec;
+
     }
 
     private File createGCFileName() {
