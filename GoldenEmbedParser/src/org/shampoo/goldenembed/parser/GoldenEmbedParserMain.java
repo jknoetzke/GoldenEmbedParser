@@ -115,6 +115,7 @@ public class GoldenEmbedParserMain {
     String username = null;
     String password = null;
     boolean isGPS = false;
+    long smoothFactor = 0;
 
     /**
      * @param args
@@ -201,6 +202,13 @@ public class GoldenEmbedParserMain {
         Option gpsOption = OptionBuilder.withArgName("gps").hasArg()
                 .withDescription("true for GEGPS false for GE").create("gps");
 
+        Option smoothOption = OptionBuilder
+                .withArgName("smooth")
+                .hasArg()
+                .withDescription("Enter amount in seconds for smoothing factor")
+                .create("smooth");
+
+        options.addOption(smoothOption);
         options.addOption(inputFile);
         options.addOption(outputGCFile);
         options.addOption(outputGnuPlotFile);
@@ -262,6 +270,15 @@ public class GoldenEmbedParserMain {
                     printUsage();
                     System.exit(1);
                 }
+            }
+
+            try {
+                if (line.hasOption("smooth"))
+                    smoothFactor = Long
+                            .parseLong(line.getOptionValue("smooth"));
+            } catch (NumberFormatException ex) {
+                printUsage();
+                System.exit(1);
             }
 
             System.out.println("Input File: " + file.getAbsolutePath());
@@ -1289,6 +1306,9 @@ public class GoldenEmbedParserMain {
             gcArray = googleElevation.getGCElevations(gcArray);
         }
 
+        if (smoothFactor != 0)
+            gcArray = smooth(gcArray, smoothFactor);
+
         if (outGCFilePath != null) {
             Iterator<GoldenCheetah> iter = gcArray.iterator();
             while (iter.hasNext()) {
@@ -1333,6 +1353,46 @@ public class GoldenEmbedParserMain {
         }
 
         return null;
+    }
+
+    public List<GoldenCheetah> smooth(List<GoldenCheetah> gcArray, long secs) {
+        ArrayList<GoldenCheetah> gcSmoothedArray = new ArrayList<GoldenCheetah>();
+
+        long totalWatts = 0;
+        long totalCad = 0;
+        long totalSpeed = 0;
+        int totalHR = 0;
+        float totalElevation = 0;
+        long counter = 0;
+        GoldenCheetah smoothedGC;
+
+        for (GoldenCheetah gc : gcArray) {
+            if (counter % secs == 0 && counter != 0) {
+                smoothedGC = new GoldenCheetah();
+                smoothedGC.setCad(totalCad / counter);
+                smoothedGC.setWatts(totalWatts / counter);
+                smoothedGC.setSpeed(totalSpeed / counter);
+                smoothedGC.setHr(totalHR / (int) counter);
+                smoothedGC.setElevation(totalElevation / counter);
+                gcSmoothedArray.add(smoothedGC);
+
+                totalWatts = 0;
+                totalCad = 0;
+                totalSpeed = 0;
+                totalHR = 0;
+                totalElevation = 0;
+                counter = 0;
+
+            } else {
+                totalWatts += gc.getWatts();
+                totalCad += gc.getCad();
+                totalSpeed += gc.getSpeed();
+                totalElevation += gc.getElevation();
+                counter++;
+            }
+        }
+
+        return gcSmoothedArray;
     }
 
 }
