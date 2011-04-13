@@ -1367,13 +1367,14 @@ public class GoldenEmbedParserMain {
         GoldenCheetah smoothedGC;
 
         for (GoldenCheetah gc : gcArray) {
-            if (counter % secs == 0 && counter != 0) {
+            if (gc.getSecs() % secs == 0 && counter != 0) {
                 smoothedGC = new GoldenCheetah();
                 smoothedGC.setCad(totalCad / counter);
                 smoothedGC.setWatts(totalWatts / counter);
                 smoothedGC.setSpeed(totalSpeed / counter);
                 smoothedGC.setHr(totalHR / (int) counter);
                 smoothedGC.setElevation(totalElevation / counter);
+                smoothedGC.setSecs(gc.getSecs());
                 gcSmoothedArray.add(smoothedGC);
 
                 totalWatts = 0;
@@ -1388,6 +1389,7 @@ public class GoldenEmbedParserMain {
                 totalCad += gc.getCad();
                 totalSpeed += gc.getSpeed();
                 totalElevation += gc.getElevation();
+                totalHR += gc.getHr();
                 counter++;
             }
         }
