@@ -866,7 +866,7 @@ public class GoldenEmbedParserMain {
         byte[] timeStamp;
         long secs = 0;
 
-        if (pos + bufPos >= readBytes.length - 1) {
+        if ((pos + bufPos + 8) >= readBytes.length - 1) {
             System.out.println("\n\nTotal Failed Checksums: " + totalErrors
                     + " Out of Total ANT Messages: " + totalTrans);
             System.out.println("% Failure: " + (totalErrors / totalTrans)
@@ -887,6 +887,7 @@ public class GoldenEmbedParserMain {
 
         }
         bufToSend = new byte[size + 4];
+
         for (; bufPos < bufToSend.length; bufPos++)
             bufToSend[bufPos] = readBytes[bufPos + pos];
         if (ANTrxHandler(bufToSend, gc) == true) {
