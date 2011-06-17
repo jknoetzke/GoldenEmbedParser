@@ -577,7 +577,7 @@ public class GoldenEmbedParserMain {
                 power.setTotalWattCounter(wattCounter + 1);
                 power.setTotalCadCounter(cadCounter + 1);
 
-                flushPowerArray(gc);
+                flushPowerArray(gc, power);
 
             } else {
                 if (debug)
@@ -946,7 +946,7 @@ public class GoldenEmbedParserMain {
 
             if (rideDate == null && isGPS == true)
                 createRideDate(gps, timeStamp);
-            else
+            else if(rideDate == null)
                 createRideDate();
 
             gc.setLatitude(gps.getLatitude());
@@ -1251,7 +1251,7 @@ public class GoldenEmbedParserMain {
         }
     }
 
-    private void flushPowerArray(GoldenCheetah gc) {
+    private void flushPowerArray(GoldenCheetah gc, Power power) {
         GoldenCheetah _gc;
         // Now create GC file records for the missing messages.
 
@@ -1263,16 +1263,13 @@ public class GoldenEmbedParserMain {
         long watts = 0;
         long cad = 0;
 
-        if (diffSecs >= 5) // Let's not be ridiculous.
-        {
-            watts = 0;
-            cad = 0;
-        } else if (diffSecs != 0) {
-            watts = gc.getWatts() / diffSecs;
-            cad = gc.getCad() / diffSecs;
+        
+        if (diffSecs != 0) {
+            watts = (long) Round((power.getWatts() / power.getTotalWattCounter()) / diffSecs,0);
+            cad = (long) Round((power.getRpm() / power.getTotalCadCounter()) / diffSecs,0);
         } else {
-            watts = gc.getWatts();
-            cad = gc.getCad();
+        	watts = (long) Round(power.getWatts() / power.getTotalWattCounter() ,0);
+            cad = (long) Round(power.getRpm() / power.getTotalCadCounter(),0);
         }
 
         for (long x = startSecs; x < endSecs; x++) {

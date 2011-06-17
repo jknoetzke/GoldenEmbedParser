@@ -5,31 +5,42 @@
     <property name="build.dir"   value="build"/>
     <property name="classes.dir" value="${build.dir}/classes"/>
     <property name="jar.dir"     value="${build.dir}/jar"/>
+    <property name="lib.dir"     value="lib"/>
 
     <property name="main-class"  value="org.shampoo.goldenembed.parser.GoldenEmbedParserMain"/>
-
+ 
+    <path id="classpath">
+        <fileset dir="${lib.dir}" includes="**/*.jar"/>
+    </path>
     <target name="clean">
         <delete dir="${build.dir}"/>
     </target>
 
-    <target name="compile">
-        <mkdir dir="${classes.dir}"/>
-        <javac srcdir="${src.dir}" destdir="${classes.dir}"/>
-    </target>
-
     <target name="jar" depends="compile">
+        <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="lib/jarjar.jar"/>
         <mkdir dir="${jar.dir}"/>
-        <jar destfile="${jar.dir}/${ant.project.name}.jar" basedir="${classes.dir}">
-            <manifest>
+        <jarjar jarfile="${jar.dir}/${ant.project.name}.jar"> 
+        <fileset dir="${classes.dir}"/>
+        <zipgroupfileset dir="lib" includes="*.jar" />            
+        <manifest>
                 <attribute name="Main-Class" value="${main-class}"/>
             </manifest>
-        </jar>
+        </jarjar>
+    </target>
+
+<target name="compile">
+        <mkdir dir="${classes.dir}"/>
+        <javac srcdir="${src.dir}" destdir="${classes.dir}" classpathref="classpath"/>
     </target>
 
     <target name="run" depends="jar">
-        <java jar="${jar.dir}/${ant.project.name}.jar" fork="true"/>
+        <java fork="true" classname="${main-class}">
+            <classpath>
+                <path refid="classpath"/>
+                <path location="${jar.dir}/${ant.project.name}.jar"/>
+            </classpath>
+        </java>
     </target>
-
     <target name="clean-build" depends="clean,jar"/>
 
     <target name="main" depends="clean,run"/>
