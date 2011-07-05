@@ -326,7 +326,213 @@ public class GoldenEmbedParserMain {
             ANTParsePower0x12(msgData, size, gc);
         } else if (msgData[i] == 0x11) {
             ANTParsePower0x11(msgData, size, gc);
+        } else if (msgData[i] == 0x20) {
+            ANTParseSRMPower(msgData, size, gc);
         }
+
+    }
+
+    private void ANTParseSRMPower(byte[] msgData, int size, GoldenCheetah gc) {
+        int t1;
+        int p1;
+        int r1;
+        int v1;
+        double period = 0;
+
+        int end = 13;
+        double torque = 0;
+        double revdiff = 0;
+
+        double nm;
+        double rpm;
+        double watts;
+
+        Byte aByte;
+        int msgN = 0;
+
+        // SS LL BB CH PG RV V1--- TT--- V2--- CK
+        // A4 09 4E 01 20 A8 01 A1 67 DA 63 5A 4E 00 05 1B
+        // A4 09 4E 01 20 A9 01 A1 6D 79 67 C4 7C 00 05 1C
+
+        // RV: Event Counter (power.R)
+        // V1: Slope (power.P) (Slope for GC)
+        // TT: Time Stamp (power.T) (Period for GC)
+        // V2: Torque
+        // CK: Torque Ticks
+        /*
+         * case ANT_CRANKSRM_POWER: // 0x20 - crank torque (SRM) eventCount =
+         * message[5]; slope = message[7] + (message[6]<<8); // yes it is
+         * bigendian period = message[9] + (message[8]<<8); // yes it is
+         * bigendian torque = message[11] + (message[10]<<8); // yes it is
+         * bigendian break;
+         */
+
+        /*
+         * // SRM - crank torque frequency // case ANT_CRANKSRM_POWER: // 0x20 -
+         * crank torque (SRM) { uint16_t period = antMessage.period -
+         * lastMessage.period; uint16_t torque = antMessage.torque -
+         * lastMessage.torque; float time = (float)period / (float)2000.00;
+         * 
+         * if (time && antMessage.slope && period) {
+         * 
+         * nullCount = 0; float torque_freq = torque / time - 420/*srm_offset;
+         * float nm_torque = 10.0 * torque_freq / antMessage.slope; float
+         * cadence = 2000.0 * 60 * (antMessage.eventCount -
+         * lastMessage.eventCount) / period; float power = 3.14159 * nm_torque *
+         * cadence / 30;
+         */
+
+        for (int i = 5; i < end; i++) {
+            if (megaDebug)
+                System.out.println("0x"
+                        + UnicodeFormatter.byteToHex(msgData[i]));
+            if (msgN == 0) { // Event Count
+                if (power.first0x20) {
+                    // Just store it.
+                    aByte = new Byte(msgData[i]);
+                    power.setR(aByte.intValue());
+                    if (megaDebug)
+                        System.out.println("R: " + aByte.intValue());
+                } else {
+                    // We can calculate and then store
+                    aByte = new Byte(msgData[i]);
+                    r1 = aByte.intValue();
+                    revdiff = r1 - power.getR();
+                    if (revdiff > 250)
+                        revdiff = power.getR() - (r1 + 255);
+                    power.setR(aByte.intValue());
+                    if (megaDebug)
+                        System.out.println("revdiff is: " + revdiff);
+                }
+                msgN++;
+            } else if (msgN == 1) { // Slope
+                byte[] pRdiff = new byte[2];
+                pRdiff[0] = msgData[i];
+                if (megaDebug)
+                    System.out.println("0x"
+                            + UnicodeFormatter.byteToHex(msgData[i]) + "\n");
+                i++;
+                pRdiff[1] = msgData[i];
+                if (megaDebug)
+                    System.out.println("0x"
+                            + UnicodeFormatter.byteToHex(msgData[i]) + "\n");
+                p1 = byteArrayToInt(pRdiff, 0, 2);
+                power.setP(p1);
+
+                msgN++;
+            } else if (msgN == 2) // Period
+            {
+                byte[] pRdiff = new byte[2];
+                pRdiff[0] = msgData[i++];
+                if (megaDebug)
+                    System.out
+                            .println("0x"
+                                    + UnicodeFormatter
+                                            .byteToHex(msgData[i - 1]) + "\n");
+                pRdiff[1] = msgData[i];
+                if (megaDebug)
+                    System.out.println("0x"
+                            + UnicodeFormatter.byteToHex(msgData[i]) + "\n");
+
+                t1 = byteArrayToInt(pRdiff, 0, 2);
+
+                if (power.first0x20) {
+                    power.setT(t1);
+                    if (megaDebug)
+                        System.out.println("T: " + t1);
+                } else {
+                    period = t1 - power.getT();
+                    if (Math.abs(period) > 60000)
+                        period = power.getT() - (t1 + 65536);
+                    power.setT(t1);
+                    if (megaDebug)
+                        System.out.println("timediff is: " + period);
+                }
+
+                msgN++;
+
+            } else if (msgN == 3) // Torque
+            {
+                byte[] pRdiff = new byte[2];
+                pRdiff[0] = msgData[i++];
+                if (megaDebug)
+                    System.out
+                            .println("0x"
+                                    + UnicodeFormatter
+                                            .byteToHex(msgData[i - 1]) + "\n");
+                pRdiff[1] = msgData[i];
+                if (megaDebug)
+                    System.out.println("0x"
+                            + UnicodeFormatter.byteToHex(msgData[i]) + "\n");
+
+                v1 = byteArrayToInt(pRdiff, 0, 2);
+
+                if (power.first0x20) {
+                    power.setV(v1);
+                    if (megaDebug)
+                        System.out.println("V: " + v1);
+                } else {
+                    torque = v1 - power.getV();
+                    if (Math.abs(torque) > 60000)
+                        torque = power.getV() - (v1 + 65536);
+                    power.setV(v1);
+                    if (megaDebug)
+                        System.out.println("vdiff is: " + torque);
+                }
+                msgN++;
+            }
+        }
+
+        if (revdiff != 0) {
+
+            /*
+             * From Golden Cheetah
+             * 
+             * eventCount = message[5]; slope = message[7] + (message[6]<<8); //
+             * yes it is bigendian period = message[9] + (message[8]<<8); // yes
+             * it is bigendian torque = message[11] + (message[10]<<8); // yes
+             * it is bigendian float time = (float)period / (float)2000.00;
+             * float torque_freq = torque / time - 420/*srm_offset; float
+             * nm_torque = 10.0 * torque_freq / antMessage.slope; float cadence
+             * = 2000.0 * 60 * (antMessage.eventCount - lastMessage.eventCount)
+             * / period; float power = 3.14159 * nm_torque * cadence / 30;
+             */
+
+            double time = Math.abs(period) / 2000.00;
+            double torqueFreq = Math.abs(torque) / time - 420;
+            double nm_torque = 10.0 * torqueFreq / power.getP();
+
+            rpm = 2000.0 * 60 * revdiff / Math.abs(period);
+            watts = PI * Math.abs(nm_torque) * rpm / 30;
+
+            if (debug)
+                System.out.println("nm: " + nm_torque + " rpm: " + rpm
+                        + " watts: " + watts + "\n");
+
+            if (rpm < 300 && rpm > 0 && watts < 5000 && watts > 0) {
+                if (gc.newWatts == false) {
+                    power.setTotalWattCounter(0);
+                    power.setTotalCadCounter(0);
+                    power.setRpm(0);
+                    power.setWatts(0);
+                    gc.newWatts = true;
+                }
+
+                power.setRpm(power.getRpm() + Math.abs(rpm));
+                power.setWatts(power.getWatts() + Math.abs(watts));
+                double wattCounter = power.getTotalWattCounter();
+                double cadCounter = power.getTotalCadCounter();
+                power.setTotalWattCounter(wattCounter + 1);
+                power.setTotalCadCounter(cadCounter + 1);
+
+                flushPowerArray(gc, power);
+            } else {
+                totalSpikes++;
+            }
+        }
+
+        if (power.first0x20)
+            power.first0x20 = false;
 
     }
 
@@ -946,7 +1152,7 @@ public class GoldenEmbedParserMain {
 
             if (rideDate == null && isGPS == true)
                 createRideDate(gps, timeStamp);
-            else if(rideDate == null)
+            else if (rideDate == null)
                 createRideDate();
 
             gc.setLatitude(gps.getLatitude());
@@ -1263,13 +1469,16 @@ public class GoldenEmbedParserMain {
         long watts = 0;
         long cad = 0;
 
-        
         if (diffSecs != 0) {
-            watts = (long) Round((power.getWatts() / power.getTotalWattCounter()) / diffSecs,0);
-            cad = (long) Round((power.getRpm() / power.getTotalCadCounter()) / diffSecs,0);
+            watts = (long) Round(
+                    (power.getWatts() / power.getTotalWattCounter()) / diffSecs,
+                    0);
+            cad = (long) Round((power.getRpm() / power.getTotalCadCounter())
+                    / diffSecs, 0);
         } else {
-        	watts = (long) Round(power.getWatts() / power.getTotalWattCounter() ,0);
-            cad = (long) Round(power.getRpm() / power.getTotalCadCounter(),0);
+            watts = (long) Round(
+                    power.getWatts() / power.getTotalWattCounter(), 0);
+            cad = (long) Round(power.getRpm() / power.getTotalCadCounter(), 0);
         }
 
         for (long x = startSecs; x < endSecs; x++) {
