@@ -178,9 +178,7 @@ public class FusionTables {
         int interval = 0;
         List<GPS> gpsArray = new ArrayList<GPS>();
         GPS gps;
-
-        // Get the total time to smooth
-        long totalSecs = gcArray.get(gcArray.size() - 1).getSecs();
+        GPS prevGPS = null;
 
         if (!gcIntervals.isEmpty())
             gcInterval = gcIntervals.get(0);
@@ -208,11 +206,20 @@ public class FusionTables {
                 strArray.append(createNewLineString(description, name, gcOut,
                         gpsArray));
                 counter++;
+                gpsArray.clear();
+
                 if (gpsArray.size() != 0)
                     gps = gpsArray.get(gpsArray.size() - 1); // For
                                                              // continuation
                 gpsArray.clear();
+                gps.setElevation(gc.getElevation());
+                gps.setLatitude(gc.getLatitude());
+                gps.setLongitude(gc.getLongitude());
+                if (prevGPS == null)
+                    prevGPS = gps;
+                gpsArray.add(prevGPS);
                 gpsArray.add(gps);
+                prevGPS = gps;
 
                 if (counter >= 100) {
                     runUpdate(strArray.toString());
