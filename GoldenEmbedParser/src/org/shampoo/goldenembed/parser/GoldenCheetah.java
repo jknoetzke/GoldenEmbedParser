@@ -18,7 +18,6 @@
 
 package org.shampoo.goldenembed.parser;
 
-
 public class GoldenCheetah {
 
     private long cad;
@@ -176,10 +175,8 @@ public class GoldenCheetah {
     public void setLatitude(String latitude) {
         if (latitude == null)
             return;
-        if (latitude.length() >= 8)
-            this.latitude = latitude.substring(0, 7);
-        else
-            this.latitude = latitude;
+
+        this.latitude = latitude;
     }
 
     public String getLongitude() {
@@ -189,10 +186,7 @@ public class GoldenCheetah {
     public void setLongitude(String longitude) {
         if (longitude == null)
             return;
-        if (longitude.length() >= 9)
-            this.longitude = longitude.substring(0, 8);
-        else
-            this.longitude = longitude;
+        this.longitude = longitude;
     }
 
     public GoldenCheetah clone(GoldenCheetah _gc) {

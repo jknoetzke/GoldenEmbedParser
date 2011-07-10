@@ -866,7 +866,7 @@ public class GoldenEmbedParserMain {
         byte[] timeStamp;
         long secs = 0;
 
-        if ((pos + bufPos + 16) >= readBytes.length - 1) {
+        if ((pos + bufPos + 36) >= readBytes.length - 1) {
             System.out.println("\n\nTotal Failed Checksums: " + totalErrors
                     + " Out of Total ANT Messages: " + totalTrans);
             System.out.println("% Failure: " + (totalErrors / totalTrans)
@@ -941,12 +941,15 @@ public class GoldenEmbedParserMain {
                 for (int i = 0; i < 3; i++)
                     timeStamp[i] = readBytes[pos++];
                 secs = parseTimeStamp(timeStamp);
-
             }
+
+            if ((gc.getSecs() - secs) > 1000 || (gc.getSecs() - secs) < -1000) // Sanity
+                // Check
+                throw new NumberFormatException();
 
             if (rideDate == null && isGPS == true)
                 createRideDate(gps, timeStamp);
-            else if(rideDate == null)
+            else if (rideDate == null)
                 createRideDate();
 
             gc.setLatitude(gps.getLatitude());
@@ -1263,13 +1266,16 @@ public class GoldenEmbedParserMain {
         long watts = 0;
         long cad = 0;
 
-        
         if (diffSecs != 0) {
-            watts = (long) Round((power.getWatts() / power.getTotalWattCounter()) / diffSecs,0);
-            cad = (long) Round((power.getRpm() / power.getTotalCadCounter()) / diffSecs,0);
+            watts = (long) Round(
+                    (power.getWatts() / power.getTotalWattCounter()) / diffSecs,
+                    0);
+            cad = (long) Round((power.getRpm() / power.getTotalCadCounter())
+                    / diffSecs, 0);
         } else {
-        	watts = (long) Round(power.getWatts() / power.getTotalWattCounter() ,0);
-            cad = (long) Round(power.getRpm() / power.getTotalCadCounter(),0);
+            watts = (long) Round(
+                    power.getWatts() / power.getTotalWattCounter(), 0);
+            cad = (long) Round(power.getRpm() / power.getTotalCadCounter(), 0);
         }
 
         for (long x = startSecs; x < endSecs; x++) {
