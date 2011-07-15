@@ -943,7 +943,7 @@ public class GoldenEmbedParserMain {
                 secs = parseTimeStamp(timeStamp);
             }
 
-            if ((gc.getSecs() - secs) > 1000 || (gc.getSecs() - secs) < -1000) // Sanity
+            if ((gc.getSecs() - secs) > 30 || (gc.getSecs() - secs) < -30) // Sanity
                 // Check
                 throw new NumberFormatException();
 
