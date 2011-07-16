@@ -866,7 +866,7 @@ public class GoldenEmbedParserMain {
         byte[] timeStamp;
         long secs = 0;
 
-        if ((pos + bufPos + 36) >= readBytes.length - 1) {
+        if ((pos + bufPos + 64) >= readBytes.length - 1) {
             System.out.println("\n\nTotal Failed Checksums: " + totalErrors
                     + " Out of Total ANT Messages: " + totalTrans);
             System.out.println("% Failure: " + (totalErrors / totalTrans)
@@ -943,7 +943,7 @@ public class GoldenEmbedParserMain {
                 secs = parseTimeStamp(timeStamp);
             }
 
-            if ((gc.getSecs() - secs) > 30 || (gc.getSecs() - secs) < -30) // Sanity
+            if ((gc.getSecs() - secs) > 300 || (gc.getSecs() - secs) < -300) // Sanity
                 // Check
                 throw new NumberFormatException();
 
