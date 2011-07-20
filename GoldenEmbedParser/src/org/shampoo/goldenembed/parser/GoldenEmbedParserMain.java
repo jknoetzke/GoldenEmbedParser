@@ -72,6 +72,8 @@ public class GoldenEmbedParserMain {
     File outFile = null;
 
     long lastWattSecs = 0; // To keep track of the last time watts were saved.
+    long sanitySeconds = 0;
+    double sanityDistance = 0;
 
     boolean isFirstRecordedTime = true;
     long firstRecordedTime = 0;
@@ -943,9 +945,8 @@ public class GoldenEmbedParserMain {
                 secs = parseTimeStamp(timeStamp);
             }
 
-            if ((gc.getSecs() - secs) > 300 || (gc.getSecs() - secs) < -300) // Sanity
-                // Check
-                throw new NumberFormatException();
+            if (secs == 0)
+                secs = 0;
 
             if (rideDate == null && isGPS == true)
                 createRideDate(gps, timeStamp);
@@ -955,8 +956,10 @@ public class GoldenEmbedParserMain {
             gc.setLatitude(gps.getLatitude());
             gc.setLongitude(gps.getLongitude());
             gc.setSpeed(gps.getSpeed() * KNOTS_TO_KILOMETERS);
+
             gc.setDistance(gc.getDistance()
                     + (gc.getSpeed() * (gc.getSecs() - gc.getPrevSpeedSecs()) / 3600.0));
+
             gc.setPrevSpeedSecs(gc.getSecs());
             if (secs > 86400) // Only fools ride for more then 24hrs a time..
                 throw new NumberFormatException();
@@ -1221,22 +1224,34 @@ public class GoldenEmbedParserMain {
                 day = new Byte(timeStamp[i++]);
             }
 
-            hour = new Byte(timeStamp[i++]);
-            min = new Byte(timeStamp[i++]);
-            sec = new Byte(timeStamp[i++]);
+            if (year >= 0 && year <= 99 && month >= 0 && month <= 12
+                    && day >= 0 && day <= 31) {
+                hour = new Byte(timeStamp[i++]);
+                min = new Byte(timeStamp[i++]);
+                sec = new Byte(timeStamp[i++]);
 
-            year += 2000;
+                year += 2000;
+            } else
+                throw new NumberFormatException();
 
-            if (hour <= 24 && min <= 60 && sec <= 60)
+            if (hour <= 24 && hour >= 0 && min <= 60 && min >= 0 && sec <= 60
+                    && sec >= 0)
                 cal.set(year, month, day, hour, min, sec);
             else
                 throw new NumberFormatException();
 
             long totalSecs = cal.getTimeInMillis() / 1000;
 
+            SimpleDateFormat rideFormat = new SimpleDateFormat(
+                    "yyyy/MM/dd hh:mm:ss");
+            rideDate = rideFormat.format(cal.getTime());
+
+            System.out.println(rideDate);
+
             if (firstRecordedTime == 0)
                 firstRecordedTime = totalSecs;
 
+            System.out.println(totalSecs - firstRecordedTime);
             return totalSecs - firstRecordedTime;
         } catch (NumberFormatException e) {
             throw new NumberFormatException();
@@ -1291,6 +1306,7 @@ public class GoldenEmbedParserMain {
                 _gc = new GoldenCheetah();
                 _gc = _gc.clone(gc);
                 _gc.setSecs(x);
+                _gc.setPrevSpeedSecs(x);
                 _gc.setWatts(watts);
                 _gc.setCad(cad);
                 gcArray.add(_gc);
