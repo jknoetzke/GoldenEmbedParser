@@ -72,8 +72,6 @@ public class GoldenEmbedParserMain {
     File outFile = null;
 
     long lastWattSecs = 0; // To keep track of the last time watts were saved.
-    long sanitySeconds = 0;
-    double sanityDistance = 0;
 
     boolean isFirstRecordedTime = true;
     long firstRecordedTime = 0;
@@ -945,9 +943,6 @@ public class GoldenEmbedParserMain {
                 secs = parseTimeStamp(timeStamp);
             }
 
-            if (secs == 0)
-                secs = 0;
-
             if (rideDate == null && isGPS == true)
                 createRideDate(gps, timeStamp);
             else if (rideDate == null)
@@ -1242,16 +1237,9 @@ public class GoldenEmbedParserMain {
 
             long totalSecs = cal.getTimeInMillis() / 1000;
 
-            SimpleDateFormat rideFormat = new SimpleDateFormat(
-                    "yyyy/MM/dd hh:mm:ss");
-            rideDate = rideFormat.format(cal.getTime());
-
-            System.out.println(rideDate);
-
             if (firstRecordedTime == 0)
                 firstRecordedTime = totalSecs;
 
-            System.out.println(totalSecs - firstRecordedTime);
             return totalSecs - firstRecordedTime;
         } catch (NumberFormatException e) {
             throw new NumberFormatException();
@@ -1302,14 +1290,6 @@ public class GoldenEmbedParserMain {
                 tmpGC.setCad(cad);
                 tmpGC.setWatts(watts);
                 gcArray.set(gcArray.indexOf(_gc), tmpGC);
-            } else {
-                _gc = new GoldenCheetah();
-                _gc = _gc.clone(gc);
-                _gc.setSecs(x);
-                _gc.setPrevSpeedSecs(x);
-                _gc.setWatts(watts);
-                _gc.setCad(cad);
-                gcArray.add(_gc);
             }
         }
         lastWattSecs = endSecs + 1;
