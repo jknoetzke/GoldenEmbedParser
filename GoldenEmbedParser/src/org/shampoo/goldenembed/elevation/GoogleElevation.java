@@ -17,8 +17,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import org.shampoo.goldenembed.parser.GoldenCheetah;
 import org.shampoo.goldenembed.tools.Wait;
@@ -27,16 +25,14 @@ public class GoogleElevation {
 
     private Map<Location, Float> elevations = new HashMap<Location, Float>();
 
-    Logger logger = null;
     String serElevations;
 
     public Map<Location, Float> getElevations() {
         return elevations;
     }
 
-    public GoogleElevation(String serElevations, Logger logger) {
+    public GoogleElevation(String serElevations) {
         this.serElevations = serElevations;
-        this.logger = logger;
     }
 
     public static float getElevation(Float lat, Float lon) {
@@ -64,7 +60,7 @@ public class GoogleElevation {
             return resultList;
 
         } catch (GeocodeException ex) {
-            logger.log(Level.SEVERE, ex.toString());
+            System.out.println(ex);
         }
 
         return null;
@@ -142,9 +138,9 @@ public class GoogleElevation {
             oos.writeObject(elevations);
             oos.close();
         } catch (FileNotFoundException e) {
-            logger.log(Level.SEVERE, e.toString());
-        } catch (IOException e) {
-            logger.log(Level.SEVERE, e.toString());
+            e.printStackTrace();
+        } catch (IOException ex) {
+            ex.printStackTrace();
         }
 
     }
@@ -161,11 +157,11 @@ public class GoogleElevation {
             return elevations;
 
         } catch (FileNotFoundException e) {
-            logger.log(Level.SEVERE, e.toString());
+            e.printStackTrace();
         } catch (IOException e) {
-            logger.log(Level.SEVERE, e.toString());
+            e.printStackTrace();
         } catch (ClassNotFoundException e) {
-            logger.log(Level.SEVERE, e.toString());
+            e.printStackTrace();
         }
 
         return null;

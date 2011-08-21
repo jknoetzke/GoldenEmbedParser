@@ -631,8 +631,10 @@ public class GoldenEmbedParserMain {
         if (size < 0) {
             pos++;
             // We failed a checksum skip..
-            while (readBytes[pos] != MESG_TX_SYNC)
+            while (readBytes[pos] != MESG_TX_SYNC) {
                 pos++;
+            }
+            totalErrors++;
             return pos;
 
         }
@@ -874,7 +876,6 @@ public class GoldenEmbedParserMain {
                 fout = new PrintWriter(new FileOutputStream(outFile));
                 initGCFile(year, month, day, hr, min, sec);
             } catch (FileNotFoundException e1) {
-                logger.log(Level.SEVERE, e1.toString());
                 e1.printStackTrace();
                 System.exit(1);
             }
@@ -946,8 +947,7 @@ public class GoldenEmbedParserMain {
         printDupes(gcArray);
 
         if (serializedElevationPath != null) {
-            googleElevation = new GoogleElevation(serializedElevationPath,
-                    logger);
+            googleElevation = new GoogleElevation(serializedElevationPath);
             gcArray = googleElevation.getGCElevations(gcArray);
         }
 
