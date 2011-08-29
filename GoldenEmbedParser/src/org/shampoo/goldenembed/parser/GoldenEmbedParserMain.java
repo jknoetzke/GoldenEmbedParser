@@ -943,6 +943,8 @@ public class GoldenEmbedParserMain {
         Collections.sort(gcArray, new SortBySeconds());
         List<IntervalBean> gcIntervals = new ArrayList<IntervalBean>();
 
+        printDupes(gcArray);
+
         if (serializedElevationPath != null) {
             googleElevation = new GoogleElevation(serializedElevationPath,
                     logger);
@@ -996,6 +998,27 @@ public class GoldenEmbedParserMain {
         }
 
         return null;
+    }
+    
+    private void printDupes(List<GoldenCheetah> gcArray)
+    {
+        long secs = 0;
+    	for(GoldenCheetah gc: gcArray)
+    	{
+    		if(secs == gc.getSecs())
+    		{
+    			long hours = secs / 3600,
+    			remainder = secs % 3600,
+    			minutes = remainder / 60,
+    			seconds = remainder % 60;
+
+    			System.out.println((hours < 10 ? "0" : "") + hours
+    			+ ":" + (minutes < 10 ? "0" : "") + minutes
+    			+ ":" + (seconds< 10 ? "0" : "") + seconds );
+
+    		}
+    		secs = gc.getSecs();
+    	}
     }
 
     public List<GoldenCheetah> smooth(List<GoldenCheetah> gcArray, long secs) {
