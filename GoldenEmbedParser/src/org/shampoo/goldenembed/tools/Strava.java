@@ -71,8 +71,6 @@ public class Strava {
 		list.add("watts");
 		list.add("cadence");
 		list.add("heartrate");
-		list.add("h_accuracy");
-		list.add("v_accuracy");
 		
 		MultivaluedMapImpl formData = new MultivaluedMapImpl();
 		formData.add("token", token);
