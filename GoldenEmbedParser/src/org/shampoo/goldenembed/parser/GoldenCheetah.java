@@ -206,6 +206,7 @@ public class GoldenCheetah {
         gc.setLatitude(_gc.getLatitude());
         gc.setLongitude(_gc.getLongitude());
         gc.setElevation(_gc.getElevation());
+        gc.setDate(_gc.getDate());
 
         return gc;
     }

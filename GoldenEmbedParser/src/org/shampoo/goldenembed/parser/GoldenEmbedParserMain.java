@@ -51,6 +51,7 @@ import org.shampoo.goldenembed.tools.FusionTables;
 import org.shampoo.goldenembed.tools.GnuPlot;
 import org.shampoo.goldenembed.tools.IntervalBean;
 import org.shampoo.goldenembed.tools.Intervals;
+import org.shampoo.goldenembed.tools.Strava;
 
 public class GoldenEmbedParserMain {
     static final byte MESG_RESPONSE_EVENT_ID = 0x40;
@@ -112,6 +113,9 @@ public class GoldenEmbedParserMain {
     String logFilePath = "";
     String username = null;
     String password = null;
+    String stravaUsername = null;
+    String stravaPassword = null;
+    
     boolean isGPS = false;
     long smoothFactor = 0;
 
@@ -205,7 +209,19 @@ public class GoldenEmbedParserMain {
                 .hasArg()
                 .withDescription("Enter amount in seconds for smoothing factor")
                 .create("smooth");
+        
+        Option stravaUser = OptionBuilder
+        .withArgName("strava_user")
+        .hasArg()
+        .withDescription("Enter your Strava Username (email)")
+        .create("strava_user");
 
+        Option stravaPass = OptionBuilder
+        .withArgName("strava_pass")
+        .hasArg()
+        .withDescription("Enter your Strava Password")
+        .create("strava_pass");
+        
         options.addOption(smoothOption);
         options.addOption(inputFile);
         options.addOption(outputGCFile);
@@ -216,6 +232,8 @@ public class GoldenEmbedParserMain {
         options.addOption(passwordOption);
         options.addOption(serializedElevationOption);
         options.addOption(gpsOption);
+        options.addOption(stravaPass);
+        options.addOption(stravaUser);
 
         // create the parser
         CommandLineParser parser = new GnuParser();
@@ -265,6 +283,17 @@ public class GoldenEmbedParserMain {
                 password = line.getOptionValue("password");
 
                 if (username.length() == 0 || password.length() == 0) {
+                    printUsage();
+                    System.exit(1);
+                }
+            }
+            
+            if ((line.hasOption("strava_user") == true || line
+                    .hasOption("strava_pass") == true)) {
+                stravaUsername = line.getOptionValue("strava_user");
+                stravaPassword = line.getOptionValue("strava_pass");
+
+                if (stravaUsername.length() == 0 || stravaPassword.length() == 0) {
                     printUsage();
                     System.exit(1);
                 }
@@ -945,6 +974,9 @@ public class GoldenEmbedParserMain {
         List<IntervalBean> gcIntervals = new ArrayList<IntervalBean>();
 
         printDupes(gcArray);
+        
+        if(stravaUsername != null)
+        	new Strava(gcArray, stravaUsername, stravaPassword, rideDate);
 
         if (serializedElevationPath != null) {
             googleElevation = new GoogleElevation(serializedElevationPath);
