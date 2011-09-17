@@ -1,114 +1,131 @@
 package org.shampoo.goldenembed.tools;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
-import java.util.HashMap;
 import java.util.List;
 import java.util.TimeZone;
 
-import javax.ws.rs.core.MultivaluedMap;
-
+import org.shampoo.goldenembed.json.JSONArray;
+import org.shampoo.goldenembed.json.JSONException;
+import org.shampoo.goldenembed.json.JSONObject;
 import org.shampoo.goldenembed.parser.GoldenCheetah;
 
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
-import com.sun.jersey.core.util.MultivaluedMapImpl;
 
 public class Strava {
 
-	Client client = Client.create();
-	WebResource webResource = client.resource("http://www.strava.com/api/v2/");
+    Client client = Client.create();
+    WebResource webResourceSSL = client
+            .resource("https://www.strava.com/api/v2/");
+    WebResource webResource = client.resource("http://www.strava.com/api/v2/");
 
-	public Strava(List<GoldenCheetah> gcArray, String email, String password,
-			String rideDate) {
-		String token = login(email, password);
-		upload(token, gcArray, rideDate);
-	}
+    public Strava(List<GoldenCheetah> gcArray, String email, String password,
+            String rideDate) {
+        String token = login(email, password);
+        upload(token, gcArray, rideDate);
+    }
 
-	public String getTokenFromJSON(String json) {
-		int start = json.indexOf("token");
-		start += 8;
-		String token = json.substring(start, json.indexOf(',') - 1);
-		return token;
+    public String getTokenFromJSON(String json) {
+        int start = json.indexOf("token");
+        start += 8;
+        String token = json.substring(start, json.indexOf(',') - 1);
+        return token;
 
-	}
+    }
 
-	private String login(String email, String password) {
-		MultivaluedMap<String, String> formData = new MultivaluedMapImpl();
-		formData.add("email", email);
-		formData.add("password", password);
-		formData.add("agreed_to_terms", "true");
+    private String login(String email, String password) {
+        JSONObject formData = new JSONObject();
+        try {
+            formData.put("email", email);
 
-		ClientResponse response = webResource.path("authentication")
-				.path("login").type("application/x-www-form-urlencoded")
-				.post(ClientResponse.class, formData);
-		String reply = response.getEntity(String.class);
-		System.out.println(reply);
-		return getTokenFromJSON(reply);
-	}
+            formData.put("password", password);
+            formData.put("agreed_to_terms", "true");
 
-	private void upload(String token, List<GoldenCheetah> gcArray,
-			String rideDate) {
+            ClientResponse response = webResourceSSL.path("authentication")
+                    .path("login").type("application/json")
+                    .post(ClientResponse.class, formData.toString());
+            String reply = response.getEntity(String.class);
 
-		HashMap<String, Object> metaMap = new HashMap<String, Object>();
+            String token = getTokenFromJSON(reply);
+            System.out.println("Strava Token is: " + token);
+            return token;
+        } catch (JSONException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
 
-		ArrayList<String> list = new ArrayList<String>();
-		list.add("time");
-		list.add("latitude");
-		list.add("longitude");
-		list.add("elevation");
-		list.add("watts");
-		list.add("cadence");
-		list.add("heartrate");
+        return null;
+    }
 
-		metaMap.put("token", token);
-		metaMap.put("type", "json");
-		metaMap.put("data_fields", list);
+    private void upload(String token, List<GoldenCheetah> gcArray,
+            String rideDate) {
 
-		ArrayList<String> data;
-		ArrayList<List<String>> tmpMap = new ArrayList<List<String>>();
+        try {
+            JSONObject formData = new JSONObject();
+            JSONArray data_fields = new JSONArray();
+            JSONArray data = new JSONArray();
 
-		for (GoldenCheetah gc : gcArray) {
-			data = new ArrayList<String>();
-			data.add(formatDate(gc, rideDate));
-			data.add(gc.getLatitude());
-			data.add(gc.getLongitude());
-			data.add(String.valueOf(gc.getElevation()));
-			data.add(String.valueOf(gc.getWatts()));
-			data.add(String.valueOf(gc.getCad()));
-			data.add(String.valueOf(gc.getHr()));
-			tmpMap.add(data);
-		}
+            formData.put("data", data_fields);
+            formData.put("type", "json");
+            formData.put("token", token);
+            formData.put("activity_name", "Golden Embed");
 
-		// Hack to format the JSON request in the manner Strava requires.
-		StringBuffer strBuf = new StringBuffer(metaMap.toString());
-		strBuf.insert(strBuf.length() - 1, " data=" + tmpMap.toString());
-		System.out.println(strBuf);
+            data_fields.put("time");
+            data_fields.put("latitude");
+            data_fields.put("longitude");
+            data_fields.put("elevation");
+            data_fields.put("watts");
+            data_fields.put("cadence");
+            data_fields.put("heartrate");
 
-		ClientResponse response = webResource.path("upload")
-				.type("application/x-www-form-urlencoded")
-				.post(ClientResponse.class, strBuf.toString());
-		System.out.println(response.getEntity(String.class));
+            formData.put("data_fields", data_fields);
 
-	}
+            JSONArray dataArray;
+            for (GoldenCheetah gc : gcArray) {
+                dataArray = new JSONArray();
+                dataArray.put(formatDate(gc, rideDate));
+                dataArray.put(Float.parseFloat(gc.getLatitude()));
+                dataArray.put(Float.parseFloat(gc.getLongitude()));
+                dataArray.put(gc.getElevation());
+                dataArray.put((float) gc.getWatts());
+                dataArray.put((float) gc.getCad());
+                dataArray.put((float) gc.getHr());
 
-	public String formatDate(GoldenCheetah gc, String rideDate) {
-		Calendar rideCal = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
+                data.put(dataArray);
 
-		int year = Integer.parseInt(rideDate.substring(0, 4));
-		int month = Integer.parseInt(rideDate.substring(5, 7));
-		int day = Integer.parseInt(rideDate.substring(8, 10));
+            }
 
-		int hours = (int) gc.getSecs() / 3600, remainder = (int) gc.getSecs() % 3600, minutes = remainder / 60, seconds = remainder % 60;
+            formData.put("data", data);
+            ClientResponse response = webResource.path("upload")
+                    .type("application/json")
+                    .post(ClientResponse.class, formData.toString());
 
-		rideCal.set(year, month, day, hours, minutes, seconds);
+            System.out.println(response.getEntity(String.class));
 
-		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss");
-		String formattedDate = sdf.format(rideCal.getTime());
+        } catch (JSONException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
 
-		return formattedDate;
-	}
+    }
+
+    public String formatDate(GoldenCheetah gc, String rideDate) {
+        Calendar rideCal = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
+
+        int year = Integer.parseInt(rideDate.substring(0, 4));
+        int month = Integer.parseInt(rideDate.substring(5, 7));
+        int day = Integer.parseInt(rideDate.substring(8, 10));
+
+        int hours = (int) gc.getSecs() / 3600, remainder = (int) gc.getSecs() % 3600, minutes = remainder / 60, seconds = remainder % 60;
+
+        rideCal.set(year, month, day, hours, minutes, seconds);
+
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss");
+        String formattedDate = sdf.format(rideCal.getTime());
+
+        return formattedDate;
+    }
 }
