@@ -71,7 +71,7 @@ public class Strava {
             formData.put("data", data_fields);
             formData.put("type", "json");
             formData.put("token", token);
-            formData.put("activity_name", "Golden Embed");
+            formData.put("activity_name", getNameFromDate(rideDate));
 
             data_fields.put("time");
             data_fields.put("latitude");
@@ -123,9 +123,26 @@ public class Strava {
 
         rideCal.set(year, month, day, hours, minutes, seconds);
 
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss");
+        SimpleDateFormat sdf = new SimpleDateFormat(
+                "yyyy-MM-dd'T'hh:mm:ss.SSSZ");
         String formattedDate = sdf.format(rideCal.getTime());
 
         return formattedDate;
+    }
+
+    public String getNameFromDate(String rideDate) {
+        Calendar rideCal = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
+
+        int year = Integer.parseInt(rideDate.substring(0, 4));
+        int month = Integer.parseInt(rideDate.substring(5, 7));
+        int day = Integer.parseInt(rideDate.substring(8, 10));
+
+        rideCal.set(year, --month, day);
+
+        SimpleDateFormat sdf = new SimpleDateFormat("EEE yyyy, MMM d");
+        String formattedDate = sdf.format(rideCal.getTime());
+
+        return formattedDate;
+
     }
 }
