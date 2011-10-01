@@ -616,12 +616,6 @@ public class GoldenEmbedParserMain {
                 + gc.getSecs() + "\" hr=\"" + gc.getHr() + "\" lon=\""
                 + gc.getLongitude() + "\" lat=\"" + gc.getLatitude()
                 + "\" alt=\"" + gc.getElevation() + "\" len=\"1\"/>\n");
-
-        gc.setPrevsecs(gc.getSecs());
-        gc.setHr(0);
-        gc.setCad(0);
-        power.setWatts(0);
-        power.setRpm(0);
     }
 
     public static double Round(double Rval, int Rpl) {
@@ -974,9 +968,6 @@ public class GoldenEmbedParserMain {
 
         printDupes(gcArray);
 
-        if (stravaUsername != null)
-            new Strava(gcArray, stravaUsername, stravaPassword, rideDate);
-
         if (serializedElevationPath != null) {
             googleElevation = new GoogleElevation(serializedElevationPath);
             gcArray = googleElevation.getGCElevations(gcArray);
@@ -1015,6 +1006,10 @@ public class GoldenEmbedParserMain {
             ft.uploadToFusionTables("Golden Embed", gcArray, rideDate,
                     gcIntervals);
         }
+
+        if (stravaUsername != null)
+            new Strava(gcArray, stravaUsername, stravaPassword, rideDate);
+
         System.out.println("");
         System.out.println("Finished");
     }
