@@ -12,6 +12,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -61,6 +62,9 @@ public class GoogleElevation {
 
         } catch (GeocodeException ex) {
             System.out.println(ex);
+            System.out.println("Exiting..");
+            serializeElevations();
+            System.exit(1);
         }
 
         return null;
@@ -78,20 +82,23 @@ public class GoogleElevation {
 
         while (iter.hasNext()) {
             gc = iter.next();
-            location = new Location(Float.parseFloat(gc.getLatitude()),
-                    Float.parseFloat(gc.getLongitude()));
+            location = new Location(
+                    roundLat(Float.parseFloat(gc.getLatitude())),
+                    roundLon(Float.parseFloat(gc.getLongitude())));
             if (!elevations.containsKey(location)) {
-                locations.add(location);
-                elevations.put(location, null);
-                count++;
-                if (count == 50) // Maximum that Google allows.
-                {
-                    List<Result> results = parseMultipleLocations(locations);
-                    parseResults(results);
-                    if (++totalCounter % 20 == 0)
-                        Wait.oneSec();
-                    locations.clear();
-                    count = 0;
+                if (!locations.contains(location)) {
+                    locations.add(location);
+                    elevations.put(location, null);
+                    count++;
+                    if (count == 50) // Maximum that Google allows.
+                    {
+                        List<Result> results = parseMultipleLocations(locations);
+                        parseResults(results);
+                        if (++totalCounter % 20 == 0)
+                            Wait.oneSec();
+                        locations.clear();
+                        count = 0;
+                    }
                 }
             }
         }
@@ -108,8 +115,9 @@ public class GoogleElevation {
         List<GoldenCheetah> gcReturnArray = new ArrayList<GoldenCheetah>();
         while (iter2.hasNext()) {
             _gc = iter2.next();
-            location = new Location(Float.parseFloat(_gc.getLatitude()),
-                    Float.parseFloat(_gc.getLongitude()));
+            location = new Location(
+                    roundLat(Float.parseFloat(_gc.getLatitude())),
+                    roundLon(Float.parseFloat(_gc.getLongitude())));
             Float elevation = elevations.get(location);
             gc = _gc.clone(_gc);
             gc.setElevation(elevation);
@@ -166,6 +174,16 @@ public class GoogleElevation {
 
         return null;
 
+    }
+
+    static float roundLon(float d) {
+        DecimalFormat twoDForm = new DecimalFormat("##.###");
+        return Float.valueOf(twoDForm.format(d));
+    }
+
+    static float roundLat(float d) {
+        DecimalFormat twoDForm = new DecimalFormat("##.###");
+        return Float.valueOf(twoDForm.format(d));
     }
 
 }

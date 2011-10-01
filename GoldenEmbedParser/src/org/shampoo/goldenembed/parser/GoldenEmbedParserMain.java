@@ -115,7 +115,7 @@ public class GoldenEmbedParserMain {
     String password = null;
     String stravaUsername = null;
     String stravaPassword = null;
-    
+
     boolean isGPS = false;
     long smoothFactor = 0;
 
@@ -209,19 +209,15 @@ public class GoldenEmbedParserMain {
                 .hasArg()
                 .withDescription("Enter amount in seconds for smoothing factor")
                 .create("smooth");
-        
-        Option stravaUser = OptionBuilder
-        .withArgName("strava_user")
-        .hasArg()
-        .withDescription("Enter your Strava Username (email)")
-        .create("strava_user");
 
-        Option stravaPass = OptionBuilder
-        .withArgName("strava_pass")
-        .hasArg()
-        .withDescription("Enter your Strava Password")
-        .create("strava_pass");
-        
+        Option stravaUser = OptionBuilder.withArgName("strava_user").hasArg()
+                .withDescription("Enter your Strava Username (email)")
+                .create("strava_user");
+
+        Option stravaPass = OptionBuilder.withArgName("strava_pass").hasArg()
+                .withDescription("Enter your Strava Password")
+                .create("strava_pass");
+
         options.addOption(smoothOption);
         options.addOption(inputFile);
         options.addOption(outputGCFile);
@@ -287,13 +283,14 @@ public class GoldenEmbedParserMain {
                     System.exit(1);
                 }
             }
-            
+
             if ((line.hasOption("strava_user") == true || line
                     .hasOption("strava_pass") == true)) {
                 stravaUsername = line.getOptionValue("strava_user");
                 stravaPassword = line.getOptionValue("strava_pass");
 
-                if (stravaUsername.length() == 0 || stravaPassword.length() == 0) {
+                if (stravaUsername.length() == 0
+                        || stravaPassword.length() == 0) {
                     printUsage();
                     System.exit(1);
                 }
@@ -691,7 +688,8 @@ public class GoldenEmbedParserMain {
                 pos += 22; // All GPS data
 
                 // Get the intial elevation from Google use Lat and Lon
-                if (altiPressure == null) {
+
+                if (altiPressure == null && serializedElevationPath == null) {
                     altiPressure = new AltitudePressure(
                             GoogleElevation.getElevation(
                                     Float.valueOf(gps.getLatitude()),
@@ -712,7 +710,8 @@ public class GoldenEmbedParserMain {
                 strPressure = convertBytesToString(pressureByte);
                 pressure = Float.parseFloat(strPressure);
 
-                gc.setElevation(altiPressure.altiCalc(pressure / 100.0f));
+                if (serializedElevationPath == null)
+                    gc.setElevation(altiPressure.altiCalc(pressure / 100.0f));
 
                 timeStamp = new byte[6];
 
@@ -974,9 +973,9 @@ public class GoldenEmbedParserMain {
         List<IntervalBean> gcIntervals = new ArrayList<IntervalBean>();
 
         printDupes(gcArray);
-        
-        if(stravaUsername != null)
-        	new Strava(gcArray, stravaUsername, stravaPassword, rideDate);
+
+        if (stravaUsername != null)
+            new Strava(gcArray, stravaUsername, stravaPassword, rideDate);
 
         if (serializedElevationPath != null) {
             googleElevation = new GoogleElevation(serializedElevationPath);
@@ -1032,24 +1031,18 @@ public class GoldenEmbedParserMain {
         return null;
     }
 
-    private void printDupes(List<GoldenCheetah> gcArray)
-    {
+    private void printDupes(List<GoldenCheetah> gcArray) {
         long secs = 0;
-        for(GoldenCheetah gc: gcArray)
-        {
-    if(secs == gc.getSecs())
-    {
-        long hours = secs / 3600,
-    remainder = secs % 3600,
-    minutes = remainder / 60,
-    seconds = remainder % 60;
+        for (GoldenCheetah gc : gcArray) {
+            if (secs == gc.getSecs()) {
+                long hours = secs / 3600, remainder = secs % 3600, minutes = remainder / 60, seconds = remainder % 60;
 
-    System.out.println((hours < 10 ? "0" : "") + hours
-    + ":" + (minutes < 10 ? "0" : "") + minutes
-    + ":" + (seconds< 10 ? "0" : "") + seconds );
-    		}
-    secs = gc.getSecs();
-    }
+                System.out.println((hours < 10 ? "0" : "") + hours + ":"
+                        + (minutes < 10 ? "0" : "") + minutes + ":"
+                        + (seconds < 10 ? "0" : "") + seconds);
+            }
+            secs = gc.getSecs();
+        }
     }
 
     public List<GoldenCheetah> smooth(List<GoldenCheetah> gcArray, long secs) {
