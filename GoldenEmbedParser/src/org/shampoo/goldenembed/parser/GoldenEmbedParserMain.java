@@ -51,6 +51,7 @@ import org.shampoo.goldenembed.tools.FusionTables;
 import org.shampoo.goldenembed.tools.GnuPlot;
 import org.shampoo.goldenembed.tools.IntervalBean;
 import org.shampoo.goldenembed.tools.Intervals;
+import org.shampoo.goldenembed.tools.RideWithGPS;
 import org.shampoo.goldenembed.tools.Strava;
 
 public class GoldenEmbedParserMain {
@@ -115,6 +116,8 @@ public class GoldenEmbedParserMain {
 	String password = null;
 	String stravaUsername = null;
 	String stravaPassword = null;
+	String rideWithGPSUsername;
+	String rideWithGPSPassword;
 
 	boolean isGPS = false;
 	long smoothFactor = 0;
@@ -218,6 +221,14 @@ public class GoldenEmbedParserMain {
 				.withDescription("Enter your Strava Password")
 				.create("strava_pass");
 
+		Option rideWithGPSUser = OptionBuilder.withArgName("ridewithgps_user")
+				.hasArg().withDescription("Ride with Gps Username")
+				.create("ridewithgps_user");
+
+		Option rideWithGPSPass = OptionBuilder.withArgName("ridewithgps_pass")
+				.hasArg().withDescription("Ride with Gps Password")
+				.create("ridewithgps_pass");
+
 		options.addOption(smoothOption);
 		options.addOption(inputFile);
 		options.addOption(outputGCFile);
@@ -230,6 +241,8 @@ public class GoldenEmbedParserMain {
 		options.addOption(gpsOption);
 		options.addOption(stravaPass);
 		options.addOption(stravaUser);
+		options.addOption(rideWithGPSUser);
+		options.addOption(rideWithGPSPass);
 
 		// create the parser
 		CommandLineParser parser = new GnuParser();
@@ -291,6 +304,18 @@ public class GoldenEmbedParserMain {
 
 				if (stravaUsername.length() == 0
 						|| stravaPassword.length() == 0) {
+					printUsage();
+					System.exit(1);
+				}
+			}
+
+			if ((line.hasOption("ridewithgps_user") == true || line
+					.hasOption("ridewithgps_pass") == true)) {
+				rideWithGPSUsername = line.getOptionValue("ridewithgps_user");
+				rideWithGPSPassword = line.getOptionValue("ridewithgps_pass");
+
+				if (rideWithGPSUsername.length() == 0
+						|| rideWithGPSPassword.length() == 0) {
 					printUsage();
 					System.exit(1);
 				}
@@ -1009,6 +1034,10 @@ public class GoldenEmbedParserMain {
 
 		if (stravaUsername != null)
 			new Strava(gcArray, stravaUsername, stravaPassword, rideDate);
+
+		if (rideWithGPSUsername != null)
+			new RideWithGPS(gcArray, rideWithGPSUsername, rideWithGPSPassword,
+					rideDate);
 
 		System.out.println("");
 		System.out.println("Finished");

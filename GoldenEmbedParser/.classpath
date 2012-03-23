@@ -9,5 +9,6 @@
 	<classpathentry kind="lib" path="lib/commons-cli-1.2.jar"/>
 	<classpathentry kind="lib" path="lib/jersey-client-1.9.jar"/>
 	<classpathentry kind="lib" path="lib/jersey-core-1.9.jar"/>
+	<classpathentry kind="lib" path="lib/json_simple-1.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
