@@ -1,6 +1,5 @@
 package org.shampoo.goldenembed.tools;
 
-import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.List;
@@ -66,24 +65,8 @@ public class RideWithGPS {
 
 		int hours = (int) gc.getSecs() / 3600, remainder = (int) gc.getSecs() % 3600, minutes = remainder / 60, seconds = remainder % 60;
 
-		rideCal.set(year, --month, day, hours, minutes, seconds);
+		rideCal.set(year, --month, ++day, hours, minutes, seconds);
 		return rideCal.getTimeInMillis() / 1000;
-
-	}
-
-	public String getNameFromDate(String rideDate) {
-		Calendar rideCal = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
-
-		int year = Integer.parseInt(rideDate.substring(0, 4));
-		int month = Integer.parseInt(rideDate.substring(5, 7));
-		int day = Integer.parseInt(rideDate.substring(8, 10));
-
-		rideCal.set(year, --month, --day);
-
-		SimpleDateFormat sdf = new SimpleDateFormat("EEE yyyy, MMM d");
-		String formattedDate = sdf.format(rideCal.getTime());
-
-		return formattedDate;
 
 	}
 }
