@@ -39,7 +39,7 @@ public class RideWithGPS {
 			data.put("p", (float) gc.getWatts());
 			data.put("c", (float) gc.getCad());
 			data.put("h", (float) gc.getHr());
-			data.put("s", (float) (gc.getSpeed() * 1000) % 360);
+			data.put("s", (float) (gc.getSpeed() * 1000) % 3600);
 			data.put("d", (float) (gc.getDistance() * 1000));
 			dataArray.add(data);
 		}
