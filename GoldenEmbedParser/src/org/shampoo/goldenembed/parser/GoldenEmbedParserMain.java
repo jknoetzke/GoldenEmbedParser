@@ -77,7 +77,8 @@ public class GoldenEmbedParserMain {
 	long firstRecordedTime = 0;
 
 	public float totalTrans = 0;
-	public float totalErrors = 0;
+	public float totalChecksumError = 0;
+	public float totalGPSError = 0;
 	public long totalSpikes = 0;
 	boolean noGSC = false;
 	int startTime = 0;
@@ -337,11 +338,21 @@ public class GoldenEmbedParserMain {
 				while (pos != file.length())
 					pos = readBuffer(readBytes, file.getParent());
 
-				System.out.println("\n\nTotal Failed Checksums: " + totalErrors
+				System.out.println("\n\nTotal Failed Checksums: "
+						+ totalChecksumError + " Out of Total ANT Messages: "
+						+ totalTrans);
+				System.out.println("% ANT Failure: "
+						+ (totalChecksumError / totalTrans) * 100.0);
+				System.out.println("Total Failed GPS: " + totalGPSError
 						+ " Out of Total ANT Messages: " + totalTrans);
-				System.out.println("% Failure: " + (totalErrors / totalTrans)
+				System.out.println("% GPS Failure: "
+						+ (totalGPSError / totalTrans) * 100.0);
+				System.out.println("Total Failed Messages: "
+						+ (totalChecksumError + totalGPSError)
+						+ " Out of Total ANT Messages: " + totalTrans);
+				System.out.println("% Failure: "
+						+ ((totalChecksumError + totalGPSError) / totalTrans)
 						* 100.0);
-				System.out.println("Total CAD or Watt Spikes: " + totalSpikes);
 				writeOutGCRecords();
 				System.exit(0);
 
@@ -536,7 +547,7 @@ public class GoldenEmbedParserMain {
 								+ UnicodeFormatter.byteToHex(checksum));
 					msgN = 0;
 					inMsg = true;
-					totalErrors++;
+					totalChecksumError++;
 					errorFlag = true;
 					return errorFlag;
 				}
@@ -662,10 +673,22 @@ public class GoldenEmbedParserMain {
 		long secs = 0;
 
 		if ((pos + bufPos + 64) >= readBytes.length - 1) {
-			System.out.println("\n\nTotal Failed Checksums: " + totalErrors
+			System.out.println("\n\nTotal Failed Checksums: "
+					+ totalChecksumError + " Out of Total ANT Messages: "
+					+ totalTrans);
+			System.out.println("% ANT Failure: "
+					+ (totalChecksumError / totalTrans) * 100.0);
+			System.out.println("Total Failed GPS: " + totalGPSError
 					+ " Out of Total ANT Messages: " + totalTrans);
-			System.out.println("% Failure: " + (totalErrors / totalTrans)
+			System.out.println("% GPS Failure: " + (totalGPSError / totalTrans)
 					* 100.0);
+			System.out.println("Total Failed Messages: "
+					+ (totalChecksumError + totalGPSError)
+					+ " Out of Total ANT Messages: " + totalTrans);
+			System.out.println("% Failure: "
+					+ ((totalChecksumError + totalGPSError) / totalTrans)
+					* 100.0);
+
 			System.out.println("Total CAD or Watt Spikes: " + totalSpikes);
 			writeOutGCRecords();
 			System.exit(0);
@@ -679,7 +702,7 @@ public class GoldenEmbedParserMain {
 			while (readBytes[pos] != MESG_TX_SYNC) {
 				pos++;
 			}
-			totalErrors++;
+			totalChecksumError++;
 			return pos;
 
 		}
@@ -783,12 +806,12 @@ public class GoldenEmbedParserMain {
 		} catch (NumberFormatException e) {
 			while (readBytes[pos] != MESG_TX_SYNC)
 				pos++;
-			totalErrors++;
+			totalGPSError++;
 			return pos;
 		} catch (StringIndexOutOfBoundsException ex) {
 			while (readBytes[pos] != MESG_TX_SYNC)
 				pos++;
-			totalErrors++;
+			totalGPSError++;
 		}
 		return pos;
 
