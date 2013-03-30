@@ -18,196 +18,208 @@
 
 package org.shampoo.goldenembed.parser;
 
+import java.util.Calendar;
+
 public class GoldenCheetah {
 
-    private long cad;
-    private long watts;
-    private long secs;
-    private long prevsecs;
-    private long prevWattsecs;
-    private long prevSpeedSecs;
-    private long prevCadSecs;
-    private long prevHRSecs;
-    private double distance;
-    private double speed;
-    public boolean newWatts = true;
-    private String latitude;
-    private String longitude;
-    private int hr;
-    private int len;
-    private String date;
-    private float elevation;
-    private String description;
-    private String name;
+	private long cad;
+	private long watts;
+	private long secs;
+	private long prevsecs;
+	private long prevWattsecs;
+	private long prevSpeedSecs;
+	private long prevCadSecs;
+	private long prevHRSecs;
+	private double distance;
+	private double speed;
+	public boolean newWatts = true;
+	private String latitude;
+	private String longitude;
+	private int hr;
+	private int len;
+	private String date;
+	private float elevation;
+	private String description;
+	private String name;
+	private Calendar currentTime;
 
-    public String getDescription() {
-        return description;
-    }
+	public Calendar getCurrentTime() {
+		return currentTime;
+	}
 
-    public void setDescription(String description) {
-        this.description = description;
-    }
+	public void setCurrentTime(Calendar currentTime) {
+		this.currentTime = currentTime;
+	}
 
-    public String getName() {
-        return name;
-    }
+	public String getDescription() {
+		return description;
+	}
 
-    public void setName(String name) {
-        this.name = name;
-    }
+	public void setDescription(String description) {
+		this.description = description;
+	}
 
-    public float getElevation() {
-        return elevation;
-    }
+	public String getName() {
+		return name;
+	}
 
-    public void setElevation(float elevation) {
-        this.elevation = elevation;
-    }
+	public void setName(String name) {
+		this.name = name;
+	}
 
-    public String getDate() {
-        return date;
-    }
+	public float getElevation() {
+		return elevation;
+	}
 
-    public void setDate(String date) {
-        this.date = date;
-    }
+	public void setElevation(float elevation) {
+		this.elevation = elevation;
+	}
 
-    public int getLen() {
-        return len;
-    }
+	public String getDate() {
+		return date;
+	}
 
-    public void setLen(int len) {
-        this.len = len;
-    }
+	public void setDate(String date) {
+		this.date = date;
+	}
 
-    public int getHr() {
-        return hr;
-    }
+	public int getLen() {
+		return len;
+	}
 
-    public void setHr(int hr) {
-        this.hr = hr;
-    }
+	public void setLen(int len) {
+		this.len = len;
+	}
 
-    public long getCad() {
-        return cad;
-    }
+	public int getHr() {
+		return hr;
+	}
 
-    public void setCad(long cad) {
-        this.cad = cad;
-    }
+	public void setHr(int hr) {
+		this.hr = hr;
+	}
 
-    public long getWatts() {
-        return watts;
-    }
+	public long getCad() {
+		return cad;
+	}
 
-    public void setWatts(long watts) {
-        this.watts = watts;
-    }
+	public void setCad(long cad) {
+		this.cad = cad;
+	}
 
-    public long getSecs() {
-        return secs;
-    }
+	public long getWatts() {
+		return watts;
+	}
 
-    public void setSecs(long secs) {
-        this.secs = secs;
-    }
+	public void setWatts(long watts) {
+		this.watts = watts;
+	}
 
-    public long getPrevsecs() {
-        return prevsecs;
-    }
+	public long getSecs() {
+		return secs;
+	}
 
-    public void setPrevsecs(long prevsecs) {
-        this.prevsecs = prevsecs;
-    }
+	public void setSecs(long secs) {
+		this.secs = secs;
+	}
 
-    public long getPrevWattsecs() {
-        return prevWattsecs;
-    }
+	public long getPrevsecs() {
+		return prevsecs;
+	}
 
-    public void setPrevWattsecs(long prevWattsecs) {
-        this.prevWattsecs = prevWattsecs;
-    }
+	public void setPrevsecs(long prevsecs) {
+		this.prevsecs = prevsecs;
+	}
 
-    public long getPrevSpeedSecs() {
-        return prevSpeedSecs;
-    }
+	public long getPrevWattsecs() {
+		return prevWattsecs;
+	}
 
-    public void setPrevSpeedSecs(long prevSpeedSecs) {
-        this.prevSpeedSecs = prevSpeedSecs;
-    }
+	public void setPrevWattsecs(long prevWattsecs) {
+		this.prevWattsecs = prevWattsecs;
+	}
 
-    public long getPrevCadSecs() {
-        return prevCadSecs;
-    }
+	public long getPrevSpeedSecs() {
+		return prevSpeedSecs;
+	}
 
-    public void setPrevCadSecs(long prevCadSecs) {
-        this.prevCadSecs = prevCadSecs;
-    }
+	public void setPrevSpeedSecs(long prevSpeedSecs) {
+		this.prevSpeedSecs = prevSpeedSecs;
+	}
 
-    public long getPrevHRSecs() {
-        return prevHRSecs;
-    }
+	public long getPrevCadSecs() {
+		return prevCadSecs;
+	}
 
-    public void setPrevHRSecs(long prevHRSecs) {
-        this.prevHRSecs = prevHRSecs;
-    }
+	public void setPrevCadSecs(long prevCadSecs) {
+		this.prevCadSecs = prevCadSecs;
+	}
 
-    public double getDistance() {
-        return distance;
-    }
+	public long getPrevHRSecs() {
+		return prevHRSecs;
+	}
 
-    public void setDistance(double distance) {
-        this.distance = distance;
-    }
+	public void setPrevHRSecs(long prevHRSecs) {
+		this.prevHRSecs = prevHRSecs;
+	}
 
-    public double getSpeed() {
-        return speed;
-    }
+	public double getDistance() {
+		return distance;
+	}
 
-    public void setSpeed(double speed) {
-        this.speed = speed;
-    }
+	public void setDistance(double distance) {
+		this.distance = distance;
+	}
 
-    public String getLatitude() {
-        return latitude;
-    }
+	public double getSpeed() {
+		return speed;
+	}
 
-    public void setLatitude(String latitude) {
-        if (latitude == null)
-            return;
+	public void setSpeed(double speed) {
+		this.speed = speed;
+	}
 
-        this.latitude = latitude;
-    }
+	public String getLatitude() {
+		return latitude;
+	}
 
-    public String getLongitude() {
-        return longitude;
-    }
+	public void setLatitude(String latitude) {
+		if (latitude == null)
+			return;
 
-    public void setLongitude(String longitude) {
-        if (longitude == null)
-            return;
-        this.longitude = longitude;
-    }
+		this.latitude = latitude;
+	}
 
-    public GoldenCheetah clone(GoldenCheetah _gc) {
-        GoldenCheetah gc = new GoldenCheetah();
-        gc.setCad(_gc.getCad());
-        gc.setDistance(_gc.getDistance());
-        gc.setHr(_gc.getHr());
-        gc.setLen(_gc.getLen());
-        gc.setPrevCadSecs(_gc.getPrevCadSecs());
-        gc.setPrevHRSecs(_gc.getPrevHRSecs());
-        gc.setPrevsecs(_gc.getPrevsecs());
-        gc.setPrevSpeedSecs(_gc.getPrevSpeedSecs());
-        gc.setPrevWattsecs(_gc.getPrevWattsecs());
-        gc.setSecs(_gc.getSecs());
-        gc.setSpeed(_gc.getSpeed());
-        gc.setWatts(_gc.getWatts());
-        gc.setLatitude(_gc.getLatitude());
-        gc.setLongitude(_gc.getLongitude());
-        gc.setElevation(_gc.getElevation());
-        gc.setDate(_gc.getDate());
+	public String getLongitude() {
+		return longitude;
+	}
 
-        return gc;
-    }
+	public void setLongitude(String longitude) {
+		if (longitude == null)
+			return;
+		this.longitude = longitude;
+	}
+
+	public GoldenCheetah clone(GoldenCheetah _gc) {
+		GoldenCheetah gc = new GoldenCheetah();
+		gc.setCad(_gc.getCad());
+		gc.setDistance(_gc.getDistance());
+		gc.setHr(_gc.getHr());
+		gc.setLen(_gc.getLen());
+		gc.setPrevCadSecs(_gc.getPrevCadSecs());
+		gc.setPrevHRSecs(_gc.getPrevHRSecs());
+		gc.setPrevsecs(_gc.getPrevsecs());
+		gc.setPrevSpeedSecs(_gc.getPrevSpeedSecs());
+		gc.setPrevWattsecs(_gc.getPrevWattsecs());
+		gc.setSecs(_gc.getSecs());
+		gc.setSpeed(_gc.getSpeed());
+		gc.setWatts(_gc.getWatts());
+		gc.setLatitude(_gc.getLatitude());
+		gc.setLongitude(_gc.getLongitude());
+		gc.setElevation(_gc.getElevation());
+		gc.setDate(_gc.getDate());
+		gc.setCurrentTime(_gc.getCurrentTime());
+
+		return gc;
+	}
 }

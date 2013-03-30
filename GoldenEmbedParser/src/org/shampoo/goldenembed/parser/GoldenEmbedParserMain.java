@@ -32,7 +32,6 @@ import java.util.Collections;
 import java.util.GregorianCalendar;
 import java.util.Iterator;
 import java.util.List;
-import java.util.TimeZone;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
@@ -759,12 +758,12 @@ public class GoldenEmbedParserMain {
 
 				for (int i = 0; i < 6; i++)
 					timeStamp[i] = readBytes[pos++];
-				secs = parseTimeStamp(timeStamp);
+				secs = parseTimeStamp(timeStamp, gc);
 			} else {
 				timeStamp = new byte[3];
 				for (int i = 0; i < 3; i++)
 					timeStamp[i] = readBytes[pos++];
-				secs = parseTimeStamp(timeStamp);
+				secs = parseTimeStamp(timeStamp, gc);
 			}
 
 			if (rideDate == null && isGPS == true)
@@ -909,11 +908,12 @@ public class GoldenEmbedParserMain {
 		int min = timeStamp[4];
 		int sec = timeStamp[5];
 
-		Calendar rideCal = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
+		Calendar rideCal = new GregorianCalendar();
 		rideCal.set(year, month, day, hr, min, sec);
 
 		SimpleDateFormat rideFormat = new SimpleDateFormat(
-				"yyyy/MM/dd hh:mm:ss");
+				"yyyy/MM/dd HH:mm:ss");
+		rideFormat.setTimeZone(rideCal.getTimeZone());
 		rideDate = rideFormat.format(rideCal.getTime());
 
 		return rideDate;
@@ -933,12 +933,11 @@ public class GoldenEmbedParserMain {
 			int min = timeStamp[4];
 			int sec = timeStamp[5];
 
-			Calendar rideCal = new GregorianCalendar(
-					TimeZone.getTimeZone("UTC"));
+			Calendar rideCal = new GregorianCalendar();
 
 			rideCal.set(year, month, day, hr, min, sec);
 
-			SimpleDateFormat sdf = new SimpleDateFormat("yyyy_MM_dd_hh_mm_ss");
+			SimpleDateFormat sdf = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss");
 			outFile = new File(filePath + "/" + sdf.format(rideCal.getTime())
 					+ ".gc");
 
@@ -952,7 +951,9 @@ public class GoldenEmbedParserMain {
 		}
 	}
 
-	private long parseTimeStamp(byte[] timeStamp) throws NumberFormatException {
+	private long parseTimeStamp(byte[] timeStamp, GoldenCheetah gc)
+			throws NumberFormatException {
+
 		Calendar cal = new GregorianCalendar();
 
 		try {
@@ -983,9 +984,11 @@ public class GoldenEmbedParserMain {
 				throw new NumberFormatException();
 
 			if (hour <= 24 && hour >= 0 && min <= 60 && min >= 0 && sec <= 60
-					&& sec >= 0)
-				cal.set(year, month, day, hour, min, sec);
-			else
+					&& sec >= 0) {
+
+				cal.set(year, --month, day, hour, min, sec);
+				gc.setCurrentTime(cal);
+			} else
 				throw new NumberFormatException();
 
 			long totalSecs = cal.getTimeInMillis() / 1000;
@@ -994,6 +997,7 @@ public class GoldenEmbedParserMain {
 				firstRecordedTime = totalSecs;
 
 			return totalSecs - firstRecordedTime;
+
 		} catch (NumberFormatException e) {
 			throw new NumberFormatException();
 

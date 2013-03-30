@@ -2,6 +2,7 @@ package org.shampoo.goldenembed.tools;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.TimeZone;
@@ -48,7 +49,7 @@ public class Strava {
 		String reply = response.getEntity(String.class);
 
 		String token = getTokenFromJSON(reply);
-		System.out.println("Strava Token is: " + token);
+		System.out.println("Strava Token: " + token);
 		return token;
 	}
 
@@ -102,18 +103,11 @@ public class Strava {
 
 	}
 
-	public long formatDate(GoldenCheetah gc, String rideDate) {
-		Calendar rideCal = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
+	public String formatDate(GoldenCheetah gc, String rideDate) {
 
-		int year = Integer.parseInt(rideDate.substring(0, 4));
-		int month = Integer.parseInt(rideDate.substring(5, 7));
-		int day = Integer.parseInt(rideDate.substring(8, 10));
-
-		int hours = (int) gc.getSecs() / 3600, remainder = (int) gc.getSecs() % 3600, minutes = remainder / 60, seconds = remainder % 60;
-
-		rideCal.set(year, month, day, hours, minutes, seconds);
-
-		return rideCal.getTimeInMillis();
+		Date currentDate = new Date(gc.getCurrentTime().getTimeInMillis());
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'H:mm:ss");
+		return sdf.format(currentDate);
 
 	}
 
